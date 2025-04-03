@@ -11,12 +11,11 @@ const app = express();
 // Middleware
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
-app.use(
-  cors({
-    origin: "*",
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: "https://later-comer-monitoring-system.vercel.app", // Allow frontend origin
+  methods: "GET,POST,PUT,DELETE", // Allowed methods
+  credentials: true // Allow cookies/auth headers
+}));
 
   
 app.use(express.json());
