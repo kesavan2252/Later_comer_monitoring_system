@@ -3,36 +3,35 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import authRoutes from './routes/authRoutes.js';
 import attendanceRoutes from "./routes/attendanceRoutes.js";
-import studentRoutes from './routes/studentRoutes.js'; // ✅ Import student routes
-dotenv.config();
+import studentRoutes from './routes/studentRoutes.js';
 
+dotenv.config();
 const app = express();
 
-// Middleware
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
-
+// ✅ Set CORS for a Specific Frontend URL
 app.use(cors({
-    origin: "*", // Allow requests from any origin (Only for testing)
-    methods: "GET,POST,PUT,DELETE,OPTIONS",
-    allowedHeaders: "Content-Type,Authorization",
+    origin: "https://later-comer-monitoring-system.vercel.app", // Allow only your frontend
+    methods: "GET, POST, PUT, DELETE, OPTIONS",
+    allowedHeaders: "Content-Type, Authorization",
     credentials: true
 }));
 
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
+// ✅ Handle Preflight Requests Manually
+app.options("*", (req, res) => {
+    res.header("Access-Control-Allow-Origin", "https://later-comer-monitoring-system.vercel.app");
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    next();
+    res.sendStatus(200);
 });
 
-
-
+// Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use("/api/attendance", attendanceRoutes);
-app.use("/api/students", studentRoutes); 
+app.use("/api/students", studentRoutes);
 
 app.get("/", (req, res) => {
     res.send("Backend is working!");
