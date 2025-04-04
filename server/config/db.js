@@ -7,7 +7,7 @@ const { Pool } = pg;
 
 // Database connection using Supabase
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.POSTGRES_HOST,
     ssl: {
         rejectUnauthorized: false, // Required for Supabase connection
     }
