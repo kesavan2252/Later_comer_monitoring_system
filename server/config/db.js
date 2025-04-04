@@ -5,11 +5,15 @@ dotenv.config();
 
 const { Pool } = pg;
 
-// Database connection using Supabase
+// Manually build connection string
 const pool = new Pool({
-    connectionString: process.env.POSTGRES_HOST,
+    user: process.env.POSTGRES_USER,
+    host: process.env.POSTGRES_HOST,
+    database: process.env.POSTGRES_DB,
+    password: process.env.POSTGRES_PASSWORD,
+    port: 5432, // Default PostgreSQL port
     ssl: {
-        rejectUnauthorized: false, // Required for Supabase connection
+        rejectUnauthorized: false, // Required for Supabase
     }
 });
 
