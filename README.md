@@ -71,7 +71,7 @@ npm run dev
 
 | Table | Columns |
 |--------|--------------------------|
-| **Students** | id, name, roll_no, department, created_at |
+| **Students** | id, name, roll_no, department,|
 | **Attendance** | id, student_id, date, time, status |
 | **Admins** | id, username, password |
 
