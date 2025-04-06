@@ -16,9 +16,7 @@ const ImportIndividual = () => {
   
     try {
       const token = localStorage.getItem("token"); // Retrieve stored token
-      console.log("Retrieved Token:", token); // Debugging statement
-      console.log("API Base URL:", import.meta.env.VITE_API_BASE_URL);
-      console.log("Full API URL:", `${import.meta.env.VITE_API_BASE_URL}/api/students`);
+
 
       if (!token) {
         console.error("No token found. User is not authenticated.");
