@@ -12,47 +12,56 @@ const ImportBatch = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!file || !batch) {
-      toast.error("Please select a batch and upload a file!", { position: "top-right" });
-      return;
-    }
+  if (!file || !batch) {
+    toast.error("Please select a batch and upload a file!", { position: "top-right" });
+    return;
+  }
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("batch", batch);
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("batch", batch);
 
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/students/import`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-    
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "File upload failed");
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_BASE_URL}/api/students/import`,
+      {
+        method: "POST",
+        body: formData,
       }
+    );
 
-      toast.success("File uploaded successfully!", { position: "top-right" });
-       // Show warning if duplicate records exist
-       if (result.skipped && result.skipped.length > 0) {
-        toast.warn(
-            `Skipped ${result.skipped.length} duplicate entries! (${result.skipped.join(", ")})`,
-            { position: "top-right", autoClose: 4000 }
-        );
+    const contentType = response.headers.get("content-type");
+
+    let result;
+    if (contentType && contentType.includes("application/json")) {
+      result = await response.json();
+    } else {
+      const text = await response.text(); // To inspect raw response (HTML, etc.)
+      console.error("Unexpected non-JSON response:", text);
+      throw new Error("Unexpected response from server. Please check the backend.");
     }
 
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast.error(error.message || "Error uploading file!", { position: "top-right" });
+    if (!response.ok) {
+      throw new Error(result.message || "File upload failed");
     }
-  };
+
+    toast.success("File uploaded successfully!", { position: "top-right" });
+
+    // Show warning if duplicate records exist
+    if (result.skipped && result.skipped.length > 0) {
+      toast.warn(
+        `Skipped ${result.skipped.length} duplicate entries! (${result.skipped.join(", ")})`,
+        { position: "top-right", autoClose: 4000 }
+      );
+    }
+
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    toast.error(error.message || "Error uploading file!", { position: "top-right" });
+  }
+};
 
   return (
     <div className="flex min-h-screen">
