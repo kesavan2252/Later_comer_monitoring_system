@@ -17,8 +17,6 @@ const Dashboard = () => {
       }
       window.dispatchEvent(new Event("refreshDashboard"));
       const data = await response.json();
-      console.log("Department Counts:", data);
-
       const allDepartments = ["CSE", "ECE", "EEE", "MECH", "CIVIL", "AI&DS"].map((dept) => ({
         name: dept,
         count: data.find((entry) => entry.department === dept)?.count || 0,
