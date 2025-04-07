@@ -299,54 +299,30 @@ export const getFilteredAttendance = async (req, res) => {
 };
 
 
-
-
 export const filterAttendance = async (req, res) => {
   try {
     console.log("Request received with query:", req.query);
 
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
-      return res.status(400).json({ error: "Start date and end date are required." });
+        return res.status(400).json({ error: "Start date and end date are required." });
     }
 
     console.log("Executing Query...");
     const result = await pool.query(
-      "SELECT * FROM attendance WHERE date::DATE BETWEEN $1 AND $2",
-      [startDate, endDate]
+        "SELECT * FROM attendance WHERE date::DATE BETWEEN $1 AND $2",
+        [startDate, endDate]
     );
 
-    // Format each row's date & time into IST
-const formattedRows = result.rows.map(row => {
-  const isoString = `${row.date}T${row.time}`; // Example: "2025-04-07T09:15:00"
-  const southeastAsiaDate = new Date(isoString); // Interpreted in UTC
-
-  // Manually subtract 2 hours 30 minutes to convert to IST
-  const istTime = new Date(southeastAsiaDate.getTime() - (2.5 * 60 * 60 * 1000));
-
-  // Format to readable string (optional, or send raw timestamp to frontend)
-  const formattedIST = istTime.toLocaleString("en-IN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true
-  });
-
-  return {
-    ...row,
-    datetime_ist: formattedIST
-  };
-});
-
-    res.json(formattedRows);
+    console.log("Query Result:", result.rows);  // Check if data is returned
+    res.json(result.rows);
   } catch (error) {
-    console.error("Error fetching attendance:", error);
+    console.error("Error fetching attendance:", error);  // See the exact error in terminal
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 // Add Attendance Record
 export const addAttendance = async (req, res) => {
