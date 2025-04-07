@@ -20,23 +20,27 @@ const formatDateTimeIST = (dateStr, timeStr) => {
   if (!dateStr || !timeStr) return "Invalid Date";
 
   try {
-    // Combine date and time into ISO format assuming it's in UTC
     const utcDateTime = new Date(`${dateStr}T${timeStr}Z`);
     if (isNaN(utcDateTime.getTime())) return "Invalid Date";
 
-    // Convert to IST with 12-hour format
-    return utcDateTime.toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
+    // ✅ Manually add 5 hours and 30 minutes for IST
+    const istOffsetMs = (5 * 60 + 30) * 60 * 1000;
+    const istDate = new Date(utcDateTime.getTime() + istOffsetMs);
+
+    // ✅ Format to 12-hour string with AM/PM
+    const options = {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-      hour12: true, // 🔁 12-hour format with AM/PM
-    });
+      hour12: true,
+    };
+
+    return istDate.toLocaleString("en-IN", options);
   } catch (error) {
-    console.error("IST conversion error:", error);
+    console.error("IST manual conversion error:", error);
     return "Invalid Date";
   }
 };
