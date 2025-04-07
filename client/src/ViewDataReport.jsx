@@ -54,6 +54,7 @@ const ViewDataReport = () => {
       }
 
       // Convert to IST (assuming input is already in IST or local time)
+      const utc8Date = dayjs.tz(dateTimeStr, "YYYY-MM-DD HH:mm:ss", "Asia/Singapore");
       const istDate = localDate.tz("Asia/Kolkata");
       const formattedIST = istDate.format("DD-MM-YYYY hh:mm:ss A");
       console.log("Formatted IST:", formattedIST);
