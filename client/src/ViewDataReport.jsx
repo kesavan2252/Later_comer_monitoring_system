@@ -15,8 +15,13 @@ dayjs.extend(timezone);
 
 // Helper to convert to IST
 const formatIST = (date, time) => {
-  return dayjs.utc(`${date}T${time}`).tz("Asia/Kolkata").format("YYYY-MM-DD hh:mm A");
+  if (!date || !time) return "N/A"; // Or return "-" or ""
+  const datetime = dayjs.utc(`${date}T${time}`);
+  return datetime.isValid()
+    ? datetime.tz("Asia/Kolkata").format("YYYY-MM-DD hh:mm A")
+    : "Invalid Date";
 };
+
 
 const ViewDataReport = () => {
   const navigate = useNavigate();
@@ -40,10 +45,14 @@ const ViewDataReport = () => {
       console.log("Fetched Data:", response.data); // ✅ Add this line
 
       // Optional: Format datetime if separate date and time exist
-      const formattedData = response.data.map(row => ({
-        ...row,
-        datetime_ist: row.datetime_ist || formatIST(row.date, row.time)
-      }));
+      const formattedData = response.data.map(row => {
+     console.log("Mapping row:", row.date, row.time);
+      return {
+       ...row,
+       datetime_ist: row.datetime_ist || formatIST(row.date, row.time)
+       };
+      });
+
 
       setTableData(formattedData);
     } catch (error) {
