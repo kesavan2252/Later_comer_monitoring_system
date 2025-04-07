@@ -16,16 +16,19 @@ const ViewDataReport = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // ✅ Convert UTC date+time to IST formatted string
-const convertToIST = (dateStr, timeStr) => {
+const formatDateTimeIST = (dateStr, timeStr) => {
   if (!dateStr || !timeStr) return "Invalid Date";
 
   try {
-    // Combine date and time into ISO format assuming it's in UTC
-    const utcDateTime = new Date(`${dateStr}T${timeStr}Z`);
-    if (isNaN(utcDateTime.getTime())) return "Invalid Date";
+    // Combine into one string with a space instead of 'T'
+    const combined = new Date(`${dateStr} ${timeStr}`);
 
-    // Convert to IST using toLocaleString
-    return utcDateTime.toLocaleString("en-IN", {
+    if (isNaN(combined.getTime())) {
+      console.error("Invalid datetime input:", { dateStr, timeStr });
+      return "Invalid Date";
+    }
+
+    return combined.toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
       year: "numeric",
       month: "2-digit",
@@ -33,7 +36,7 @@ const convertToIST = (dateStr, timeStr) => {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-      hour12: false,
+      hour12: true,
     });
   } catch (error) {
     console.error("IST conversion error:", error);
