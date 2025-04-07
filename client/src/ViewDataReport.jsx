@@ -16,13 +16,11 @@ dayjs.extend(timezone);
 
 // ✅ Updated formatIST function
 // ✅ Converts Southeast Asia time (UTC+8) to IST (UTC+5:30)
-const formatIST = (date, time) => {
-  if (!date || !time) return "-";
+const formatIST = (datetime) => {
+  if (!datetime) return "-";
 
-  // Combine date and time into a string (assume it's stored in UTC+8)
-  const seAsiaDateTime = new Date(`${date}T${time}+08:00`);
+  const dateInIST = new Date(datetime); // assumes ISO string (UTC) from backend
 
-  // Convert it to IST (Asia/Kolkata)
   const formatter = new Intl.DateTimeFormat("en-IN", {
     timeZone: "Asia/Kolkata",
     year: "numeric",
@@ -33,13 +31,14 @@ const formatIST = (date, time) => {
     hour12: true,
   });
 
-  const parts = formatter.formatToParts(seAsiaDateTime);
+  const parts = formatter.formatToParts(dateInIST);
 
   const datePart = `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}`;
   const timePart = `${parts.find(p => p.type === 'hour').value}:${parts.find(p => p.type === 'minute').value} ${parts.find(p => p.type === 'dayPeriod').value}`;
 
   return `${datePart} ${timePart}`;
 };
+
 
 const ViewDataReport = () => {
   const navigate = useNavigate();
@@ -66,7 +65,7 @@ const ViewDataReport = () => {
           console.log("Mapping row:", row.date, row.time);
           return {
             ...row,
-            datetime_ist: row.datetime_ist || formatIST(row.date, row.time),
+            datetime_ist: row.datetime_ist || formatIST(`${row.date}T${row.time}`),
           };
         });
 
