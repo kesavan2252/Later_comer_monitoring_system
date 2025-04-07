@@ -3,16 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "./components/Sidebar";
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
-// Initialize dayjs plugins
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 const ViewDataReport = () => {
   const navigate = useNavigate();
@@ -21,45 +15,28 @@ const ViewDataReport = () => {
   const [tableData, setTableData] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Convert 12-hour time to 24-hour format
-  const convertTo24Hour = (time12h) => {
-    if (!time12h) return "00:00:00";
-    const [time, modifier] = time12h.split(" ");
-    let [hours, minutes, seconds] = time.split(":").map(part => part || "0");
-    hours = parseInt(hours, 10) || 0;
-    if (modifier.toUpperCase() === "PM" && hours !== 12) hours += 12;
-    if (modifier.toUpperCase() === "AM" && hours === 12) hours = 0;
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  };
-
-  // Format date and time to IST
-  const formatDateTimeIST = (dateString, timeString) => {
-    if (!dateString || !timeString) return "Invalid Date";
-
+  // Function to format date and time in IST (adapted from StudentReportDetails)
+  const formatDateTimeIST = (dateString) => {
+    if (!dateString) return "Invalid Date";
+    
     try {
-      // Convert 12-hour time to 24-hour
-      const time24h = convertTo24Hour(timeString);
-      console.log("Converted to 24h:", time24h);
-
-      // Combine date and time
-      const dateTimeStr = `${dateString} ${time24h}`;
-      console.log("Combined dateTimeStr:", dateTimeStr);
-
-      // Parse as local time string
-      const localDate = dayjs(dateTimeStr, "YYYY-MM-DD HH:mm:ss");
-      if (!localDate.isValid()) {
-        console.error("Invalid parsing:", dateTimeStr);
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.error("Invalid date string:", dateString);
         return "Invalid Date";
       }
-
-      // Format in IST without additional offset
-      const istDate = localDate.tz("Asia/Kolkata");
-      const formattedIST = istDate.format("DD-MM-YYYY hh:mm:ss A");
-      console.log("Formatted IST:", formattedIST);
-
-      return formattedIST;
+      return date.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      }).replace(/,/, ""); // Remove comma for consistency
     } catch (error) {
-      console.error("Conversion error:", error);
+      console.error("IST conversion error:", error);
       return "Invalid Date";
     }
   };
@@ -95,7 +72,7 @@ const ViewDataReport = () => {
       RollNo: row.roll_no,
       Name: row.name,
       Department: row.department,
-      "Date & Time (IST)": formatDateTimeIST(row.date, row.time),
+      "Date & Time (IST)": formatDateTimeIST(row.date), // Use only row.date
       Batch: row.batch,
     }));
 
@@ -116,7 +93,7 @@ const ViewDataReport = () => {
       row.roll_no,
       row.name,
       row.department,
-      formatDateTimeIST(row.date, row.time),
+      formatDateTimeIST(row.date), // Use only row.date
       row.batch,
     ]);
 
@@ -138,7 +115,7 @@ const ViewDataReport = () => {
             onClick={() => navigate(-1)}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
           >
-            < Back
+            &lt; Back
           </button>
           <div className="relative">
             <button
@@ -188,7 +165,7 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">{formatDateTimeIST(row.date, row.time)}</td>
+                  <td className="py-3 px-6">{formatDateTimeIST(row.date)}</td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
