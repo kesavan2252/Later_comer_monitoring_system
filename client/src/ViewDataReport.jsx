@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "./components/Sidebar";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -15,36 +17,28 @@ const ViewDataReport = () => {
   const [tableData, setTableData] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+  
   // ✅ Convert UTC date+time to IST formatted string
 const formatDateTimeIST = (dateStr, timeStr) => {
   if (!dateStr || !timeStr) return "Invalid Date";
 
   try {
-    // Create a full UTC datetime string
-    const utcDateTimeStr = `${dateStr}T${timeStr}Z`; // Z => UTC
-    const utcDate = new Date(utcDateTimeStr);
+    // Combine the date and time assuming it's in UTC
+    const utcDateTime = dayjs.utc(`${dateStr}T${timeStr}`);
 
-    if (isNaN(utcDate.getTime())) return "Invalid Date";
-
-    // Format to IST using Intl.DateTimeFormat (more reliable on Vercel)
-    const istFormatter = new Intl.DateTimeFormat("en-IN", {
-      timeZone: "Asia/Kolkata",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-    });
-
-    return istFormatter.format(utcDate);
+    // Convert to IST and format in 12-hour format
+    return utcDateTime
+      .tz("Asia/Kolkata")
+      .format("DD-MM-YYYY hh:mm:ss A"); // 👉 12-hour format with AM/PM
   } catch (error) {
-    console.error("Error formatting IST time:", error);
+    console.error("Date conversion error:", error);
     return "Invalid Date";
   }
 };
-
+  
   useEffect(() => {
     const fetchData = async () => {
       if (!startDate || !endDate) return;
