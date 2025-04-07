@@ -70,7 +70,7 @@ const ViewDataReport = () => {
 
         console.log("Fetched Data:", response.data);
 
-        const formattedData = data.map((row) => {
+        const formattedData =  response.data.map((row) => {
   let datetime_ist = "-";
   if (row.date && row.time) {
     const time24 = convertTo24Hour(row.time); // 🆕 convert AM/PM to 24h
