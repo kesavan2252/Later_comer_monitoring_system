@@ -36,11 +36,11 @@ const ViewDataReport = () => {
   if (!dateStr || !timeStr) return "Invalid Date";
 
   try {
-    // Combine date and time and parse as local time (if needed, add 'Z' to treat as UTC)
-    const utcDate = new Date(`${dateStr}T${timeStr}Z`);
+    // Combine date and time strings and assume it's UTC+8
+    const localDateTime = new Date(`${dateStr}T${timeStr}+08:00`);
 
-    // Convert to IST
-    return utcDate.toLocaleString("en-IN", {
+    // Convert to IST (UTC+5:30) by using toLocaleString with timeZone
+    return localDateTime.toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
       year: "numeric",
       month: "2-digit",
@@ -51,7 +51,7 @@ const ViewDataReport = () => {
       hour12: true,
     });
   } catch (error) {
-    console.error("Error in IST conversion:", error);
+    console.error("IST conversion error:", error);
     return "Invalid Date";
   }
 };
