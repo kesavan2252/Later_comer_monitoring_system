@@ -329,51 +329,7 @@ export const filterAttendance = async (req, res) => {
     });
 
 
-export const getFilteredAttendance = async (req, res) => {
-  try {
-      const { startDate, endDate } = req.query;
-      console.log("Received Params:", { startDate, endDate });
 
-      if (!startDate || !endDate) {
-          return res.status(400).json({ error: "Start date and end date are required." });
-      }
-
-      const result = await pool.query(`
-          SELECT 
-              a.id, 
-              s.roll_no, 
-              s.name, 
-              s.department, 
-              a.date AS full_date, -- Full timestamp
-              s.batch,  -- ✅ Corrected from a.batch to s.batch
-              a.status
-          FROM attendance a
-          JOIN students s ON a.student_id = s.id
-          WHERE a.date BETWEEN $1::DATE AND $2::DATE + INTERVAL '1 day' - INTERVAL '1 second'
-          ORDER BY a.date DESC
-      `, [startDate, endDate]);
-
-      // ✅ Format the results: Extract date and time separately
-      const formattedResult = result.rows.map(row => {
-          const dateObj = new Date(row.full_date);
-          return {
-              id: row.id,
-              roll_no: row.roll_no,
-              name: row.name,
-              department: row.department,
-              date: dateObj.toISOString().split("T")[0], // Extract YYYY-MM-DD
-              time: dateObj.toLocaleTimeString("en-US", { hour12: true }), // Format to 12-hour time
-              batch: row.batch, // ✅ Ensure batch is included
-              status: row.status
-          };
-      });
-        console.log("Formatted Query Result:", formattedRows);
-    res.json(formattedRows);
-  } catch (error) {
-    console.error("Error fetching attendance:", error);
-    res.status(500).json({ error: error.message });
-  }
-};
     
 
 
