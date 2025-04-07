@@ -13,6 +13,11 @@ import autoTable from "jspdf-autotable";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+// Helper to convert to IST
+const formatIST = (date, time) => {
+  return dayjs.utc(`${date}T${time}`).tz("Asia/Kolkata").format("YYYY-MM-DD hh:mm A");
+};
+
 const ViewDataReport = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
@@ -41,22 +46,17 @@ const ViewDataReport = () => {
     fetchData();
   }, [startDate, endDate]);
 
-  // ✅ Export to Excel
+  // ✅ Export as Excel
   const exportToExcel = () => {
-    if (tableData.length === 0) {
-      alert("No data available to export.");
-      return;
-    }
-
-    const cleanData = tableData.map((row) => ({
-      "Roll No": row.roll_no,
-      "Name": row.name,
-      "Department": row.department,
-      "Date & Time": dayjs.utc(`${row.date}T${row.time}`).tz("Asia/Kolkata").format("YYYY-MM-DD hh:mm A"),
-      Batch: row.batch,
+    const formattedData = tableData.map(row => ({
+      RollNo: row.roll_no,
+      Name: row.name,
+      Department: row.department,
+      DateTime: formatIST(row.date, row.time),
+      Batch: row.batch
     }));
 
-    const ws = XLSX.utils.json_to_sheet(cleanData);
+    const ws = XLSX.utils.json_to_sheet(formattedData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Attendance Report");
 
@@ -65,13 +65,8 @@ const ViewDataReport = () => {
     saveAs(data, `Attendance_Report_${startDate}_to_${endDate}.xlsx`);
   };
 
-  // ✅ Export to PDF
+  // ✅ Export as PDF
   const exportToPDF = () => {
-    if (tableData.length === 0) {
-      alert("No data available to export.");
-      return;
-    }
-
     const doc = new jsPDF();
     doc.text(`Attendance Report (${startDate} to ${endDate})`, 20, 10);
 
@@ -83,7 +78,7 @@ const ViewDataReport = () => {
         row.roll_no,
         row.name,
         row.department,
-        dayjs.utc(`${row.date}T${row.time}`).tz("Asia/Kolkata").format("YYYY-MM-DD hh:mm A"),
+        formatIST(row.date, row.time),
         row.batch,
       ]);
     });
@@ -101,7 +96,7 @@ const ViewDataReport = () => {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
       <div className="flex-1 p-6 ml-5">
-        {/* Header */}
+        {/* Header Section */}
         <div className="flex justify-between items-center mb-6">
           <button
             onClick={() => navigate(-1)}
@@ -110,7 +105,7 @@ const ViewDataReport = () => {
             &lt; Back
           </button>
 
-          {/* Dropdown */}
+          {/* Export Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -161,11 +156,7 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">
-                    {dayjs(`${row.date} ${row.time}`)
-                      .tz("Asia/Kolkata")
-                      .format("YYYY-MM-DD hh:mm A")}
-                  </td>
+                  <td className="py-3 px-6">{formatIST(row.date, row.time)}</td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
