@@ -301,7 +301,30 @@ export const getFilteredAttendance = async (req, res) => {
 
 
 
-import { DateTime } from "luxon";
+export const filterAttendance = async (req, res) => {
+  try {
+    console.log("Request received with query:", req.query);
+
+    const { startDate, endDate } = req.query;
+    if (!startDate || !endDate) {
+        return res.status(400).json({ error: "Start date and end date are required." });
+    }
+
+    console.log("Executing Query...");
+    const result = await pool.query(
+        "SELECT * FROM attendance WHERE date::DATE BETWEEN $1 AND $2",
+        [startDate, endDate]
+    );
+
+    console.log("Query Result:", result.rows);  // Check if data is returned
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching attendance:", error);  // See the exact error in terminal
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
 // Add Attendance Record
 export const addAttendance = async (req, res) => {
   const { roll_no, name, department, batch } = req.body;
