@@ -16,14 +16,16 @@ const ViewDataReport = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // ✅ Convert UTC date+time to IST formatted string
-  const convertToIST = (dateStr, timeStr) => {
+const convertToIST = (dateStr, timeStr) => {
+  console.log("Converting:", dateStr, timeStr); // 👈 Add this
+
   if (!dateStr || !timeStr) return "Invalid Date";
 
   try {
     const utcDate = new Date(`${dateStr}T${timeStr}Z`);
     if (isNaN(utcDate.getTime())) return "Invalid Date";
 
-    const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours
+    const istOffset = 5.5 * 60 * 60 * 1000;
     const istDate = new Date(utcDate.getTime() + istOffset);
 
     const day = String(istDate.getDate()).padStart(2, "0");
