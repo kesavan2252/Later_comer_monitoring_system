@@ -25,7 +25,7 @@ const ViewDataReport = () => {
         console.error("Invalid date string:", dateString);
         return "Invalid Date";
       }
-      return date.toLocaleString("en-IN", {
+      return date.toLocaleString("en-GB", {
         timeZone: "Asia/Kolkata",
         day: "2-digit",
         month: "2-digit",
