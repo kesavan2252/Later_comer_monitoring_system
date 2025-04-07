@@ -1,48 +1,12 @@
-// ... other imports
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "./components/Sidebar";
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
-
-// ✅ Updated formatIST function
-const convertTo24Hour = (time12h) => {
-  if (!time12h) return "00:00:00";
-  const [time, modifier] = time12h.split(" ");
-  let [hours, minutes, seconds] = time.split(":");
-
-  hours = parseInt(hours, 10);
-
-  if (modifier === "PM" && hours !== 12) {
-    hours += 12;
-  } else if (modifier === "AM" && hours === 12) {
-    hours = 0;
-  }
-
-  return `${String(hours).padStart(2, "0")}:${minutes}:${seconds}`;
-};
-
-// ✅ Converts Southeast Asia time (UTC+8) to IST (UTC+5:30)
-const formatIST = (dateStr, timeStr) => {
-  if (!dateStr || !timeStr) return "-";
-
-  const [hours, minutes, seconds] = timeStr.split(":").map(Number);
-
-  const combined = dayjs(`${dateStr}T${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`)
-    .tz("Asia/Kolkata");
-
-  return combined.format("DD/MM/YYYY hh:mm:ss A");
-};
-
+import autoTable from "jspdf-autotable"; // ✅ Correct import
 
 const ViewDataReport = () => {
   const navigate = useNavigate();
@@ -62,29 +26,9 @@ const ViewDataReport = () => {
         const response = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
         );
+        
 
-        console.log("Fetched Data:", response.data);
-
-        const formattedData =  response.data.map((row) => {
-  let datetime_ist = "-";
-  if (row.date && row.time) {
-    const time24 = convertTo24Hour(row.time); // 🆕 convert AM/PM to 24h
-    const combined = `${row.date}T${time24}`; // 🆕 valid format
-    datetime_ist = formatIST(combined);       // ✅ no error now
-    console.log("Mapping row:", combined);    // Optional: For debugging
-  }
-
-  return {
-    roll_no: row.roll_no,
-    name: row.name,
-    department: row.department,
-    batch: row.batch,
-    datetime_ist,
-  };
-});
-
-
-        setTableData(formattedData);
+        setTableData(response.data);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -93,16 +37,9 @@ const ViewDataReport = () => {
     fetchData();
   }, [startDate, endDate]);
 
+  // **Export as Excel**
   const exportToExcel = () => {
-    const formattedData = tableData.map((row) => ({
-      RollNo: row.roll_no,
-      Name: row.name,
-      Department: row.department,
-      DateTime: row.datetime_ist,
-      Batch: row.batch,
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(formattedData);
+    const ws = XLSX.utils.json_to_sheet(tableData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Attendance Report");
 
@@ -111,6 +48,7 @@ const ViewDataReport = () => {
     saveAs(data, `Attendance_Report_${startDate}_to_${endDate}.xlsx`);
   };
 
+  // **Export as PDF**
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text(`Attendance Report (${startDate} to ${endDate})`, 20, 10);
@@ -123,12 +61,12 @@ const ViewDataReport = () => {
         row.roll_no,
         row.name,
         row.department,
-        row.datetime_ist,
+        `${row.date} ${row.time}`,
         row.batch,
       ]);
     });
 
-    autoTable(doc, {
+    autoTable(doc, { // ✅ Fixed autoTable usage
       head: [tableColumn],
       body: tableRows,
       startY: 20,
@@ -141,6 +79,7 @@ const ViewDataReport = () => {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
       <div className="flex-1 p-6 ml-5">
+        {/* Header Section */}
         <div className="flex justify-between items-center mb-6">
           <button
             onClick={() => navigate(-1)}
@@ -149,6 +88,7 @@ const ViewDataReport = () => {
             &lt; Back
           </button>
 
+          {/* ✅ Export Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -181,6 +121,7 @@ const ViewDataReport = () => {
           Showing results from {startDate} to {endDate}
         </h2>
 
+        {/* Table */}
         <div className="bg-white p-6 rounded-lg shadow-lg overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -198,11 +139,7 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">
-                    {row.datetime_ist && row.datetime_ist !== "Invalid Date"
-                      ? row.datetime_ist
-                      : "-"}
-                  </td>
+                  <td className="py-3 px-6">{row.date} {row.time}</td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
