@@ -20,15 +20,15 @@ const formatDateTimeIST = (dateStr, timeStr) => {
   if (!dateStr || !timeStr) return "Invalid Date";
 
   try {
-    const utcDateTime = new Date(`${dateStr}T${timeStr}Z`);
-    if (isNaN(utcDateTime.getTime())) return "Invalid Date";
+    // Create a full UTC datetime string
+    const utcDateTimeStr = `${dateStr}T${timeStr}Z`; // Z => UTC
+    const utcDate = new Date(utcDateTimeStr);
 
-    // ✅ Manually add 5 hours and 30 minutes for IST
-    const istOffsetMs = (5 * 60 + 30) * 60 * 1000;
-    const istDate = new Date(utcDateTime.getTime() + istOffsetMs);
+    if (isNaN(utcDate.getTime())) return "Invalid Date";
 
-    // ✅ Format to 12-hour string with AM/PM
-    const options = {
+    // Format to IST using Intl.DateTimeFormat (more reliable on Vercel)
+    const istFormatter = new Intl.DateTimeFormat("en-IN", {
+      timeZone: "Asia/Kolkata",
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -36,11 +36,11 @@ const formatDateTimeIST = (dateStr, timeStr) => {
       minute: "2-digit",
       second: "2-digit",
       hour12: true,
-    };
+    });
 
-    return istDate.toLocaleString("en-IN", options);
+    return istFormatter.format(utcDate);
   } catch (error) {
-    console.error("IST manual conversion error:", error);
+    console.error("Error formatting IST time:", error);
     return "Invalid Date";
   }
 };
