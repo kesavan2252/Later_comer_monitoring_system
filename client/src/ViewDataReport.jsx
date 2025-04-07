@@ -26,10 +26,10 @@ const ViewDataReport = () => {
     if (!time12h) return "00:00:00";
     const [time, modifier] = time12h.split(" ");
     let [hours, minutes, seconds] = time.split(":").map(part => part || "0");
-    hours = parseInt(hours, 10) || 0; // Default to 0 if invalid
+    hours = parseInt(hours, 10) || 0;
     if (modifier.toUpperCase() === "PM" && hours !== 12) hours += 12;
     if (modifier.toUpperCase() === "AM" && hours === 12) hours = 0;
-    return `${String(hours).padStart(2, "0")}:${minutes}:${seconds}`;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   };
 
   // Format date and time to IST
@@ -45,15 +45,15 @@ const ViewDataReport = () => {
       const dateTimeStr = `${dateString} ${time24h}`;
       console.log("Combined dateTimeStr:", dateTimeStr);
 
-      // Parse as local time (assuming IST as entered)
+      // Parse as local time string
       const localDate = dayjs(dateTimeStr, "YYYY-MM-DD HH:mm:ss");
       if (!localDate.isValid()) {
-        console.error("Invalid local parsing:", dateTimeStr);
+        console.error("Invalid parsing:", dateTimeStr);
         return "Invalid Date";
       }
 
-      // Ensure output is in IST without additional offset
-      const istDate = localDate.tz("Asia/Kolkata", true); // Force IST without shifting
+      // Format in IST without additional offset
+      const istDate = localDate.tz("Asia/Kolkata");
       const formattedIST = istDate.format("DD-MM-YYYY hh:mm:ss A");
       console.log("Formatted IST:", formattedIST);
 
