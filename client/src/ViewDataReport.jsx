@@ -3,10 +3,16 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "./components/Sidebar";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+
+// Initialize dayjs plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const ViewDataReport = () => {
   const navigate = useNavigate();
@@ -15,26 +21,24 @@ const ViewDataReport = () => {
   const [tableData, setTableData] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Function to format date and time in IST (adapted from StudentReportDetails)
+  // Convert timestamp from UTC+8 to IST
   const formatDateTimeIST = (dateString) => {
     if (!dateString) return "Invalid Date";
-    
+
     try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
+      // Parse the date assuming it's stored in UTC+8
+      const utc8Date = dayjs.tz(dateString, "Asia/Singapore"); // UTC+8
+
+      if (!utc8Date.isValid()) {
         console.error("Invalid date string:", dateString);
         return "Invalid Date";
       }
-      return date.toLocaleString("en-IN", {
-        timeZone: "Asia/Kolkata",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      }).replace(/,/, ""); // Remove comma for consistency
+
+      // Convert to IST (UTC+5:30)
+      const istDate = utc8Date.tz("Asia/Kolkata");
+
+      // Format to DD-MM-YYYY hh:mm:ss A
+      return istDate.format("DD-MM-YYYY hh:mm:ss A");
     } catch (error) {
       console.error("IST conversion error:", error);
       return "Invalid Date";
@@ -72,7 +76,7 @@ const ViewDataReport = () => {
       RollNo: row.roll_no,
       Name: row.name,
       Department: row.department,
-      "Date & Time (IST)": formatDateTimeIST(row.date), // Use only row.date
+      "Date & Time (IST)": formatDateTimeIST(row.date),
       Batch: row.batch,
     }));
 
@@ -93,7 +97,7 @@ const ViewDataReport = () => {
       row.roll_no,
       row.name,
       row.department,
-      formatDateTimeIST(row.date), // Use only row.date
+      formatDateTimeIST(row.date),
       row.batch,
     ]);
 
