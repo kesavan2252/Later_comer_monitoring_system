@@ -1,7 +1,6 @@
 import pool from "../config/db.js";
 import cron from "node-cron";
 import nodemailer from "nodemailer";
-import { DateTime } from "luxon";
 // @desc Get latecomer count per department
 // @route GET /api/attendance/department-count
 export const getDepartmentCounts = async (req, res) => {
@@ -308,29 +307,22 @@ export const filterAttendance = async (req, res) => {
 
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
-      return res.status(400).json({ error: "Start date and end date are required." });
+        return res.status(400).json({ error: "Start date and end date are required." });
     }
 
     console.log("Executing Query...");
     const result = await pool.query(
-      "SELECT * FROM attendance WHERE date::DATE BETWEEN $1 AND $2",
-      [startDate, endDate]
+        "SELECT * FROM attendance WHERE date::DATE BETWEEN $1 AND $2",
+        [startDate, endDate]
     );
 
-    const formattedRows = result.rows.map(row => {
-      // Combine date and time to ISO-like string (assume UTC unless known)
-      const combinedDateTime = DateTime.fromISO(`${row.date}T${row.time}`, { zone: "utc" })
-        .setZone("Asia/Kolkata");
-
-      return {
-        ...row,
-        datetime_ist: combinedDateTime.toFormat("yyyy-MM-dd hh:mm a")
-      };
-    });
-
-
-
-    
+    console.log("Query Result:", result.rows);  // Check if data is returned
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching attendance:", error);  // See the exact error in terminal
+    res.status(500).json({ error: error.message });
+  }
+};
 
 
 // Add Attendance Record
@@ -427,6 +419,5 @@ export const getDepartmentReport = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 };
-
 
 
