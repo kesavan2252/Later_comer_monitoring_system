@@ -72,7 +72,7 @@ const formatDateTimeIST = (dateStr, timeStr) => {
       RollNo: row.roll_no,
       Name: row.name,
       Department: row.department,
-      "Date & Time (IST)": convertToIST(row.date, row.time),
+      "Date & Time (IST)": formatDateTimeIST(row.date, row.time),
       Batch: row.batch,
     }));
 
@@ -98,7 +98,7 @@ const formatDateTimeIST = (dateStr, timeStr) => {
         row.roll_no,
         row.name,
         row.department,
-        convertToIST(row.date, row.time),
+        formatDateTimeIST(row.date, row.time),
         row.batch,
       ]);
     });
@@ -176,7 +176,7 @@ const formatDateTimeIST = (dateStr, timeStr) => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">{convertToIST(row.date, row.time)}</td>
+                  <td className="py-3 px-6">{formatDateTimeIST(row.date, row.time)}</td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
