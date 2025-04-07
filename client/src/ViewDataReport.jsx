@@ -21,45 +21,42 @@ const ViewDataReport = () => {
   const [tableData, setTableData] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Flexible date-time conversion function with debugging
-  const formatDateTimeIST = (dateString, timeString) => {
-    if (!dateString) return "Invalid Date";
+  // Convert 12-hour time to 24-hour format
+  const convertTo24Hour = (time12h) => {
+    if (!time12h) return "00:00:00";
+    const [time, modifier] = time12h.split(" ");
+    let [hours, minutes, seconds] = time.split(":");
+    hours = parseInt(hours, 10);
+    if (modifier.toUpperCase() === "PM" && hours !== 12) hours += 12;
+    if (modifier.toUpperCase() === "AM" && hours === 12) hours = 0;
+    return `${String(hours).padStart(2, "0")}:${minutes}:${seconds}`;
+  };
 
-    console.log("Input dateString:", dateString, "timeString:", timeString);
+  // Format date and time to IST
+  const formatDateTimeIST = (dateString, timeString) => {
+    if (!dateString || !timeString) return "Invalid Date";
 
     try {
-      let dateTime;
+      // Convert 12-hour time to 24-hour
+      const time24h = convertTo24Hour(timeString);
+      console.log("Converted to 24h:", time24h);
 
-      // If timeString is provided, combine it with CavalierdateString
-      if (timeString) {
-        dateTime = `${dateString} ${timeString}`;
-        console.log("Combined dateTime:", dateTime);
-      } else {
-        dateTime = dateString;
-      }
+      // Combine date and time
+      const dateTimeStr = `${dateString} ${time24h}`;
+      console.log("Combined dateTimeStr:", dateTimeStr);
 
-      // Parse assuming the timestamp is in UTC (most common database practice)
-      const utcDate = dayjs.utc(dateTime);
+      // Parse as UTC (assuming database stores in UTC)
+      const utcDate = dayjs.utc(dateTimeStr, "YYYY-MM-DD HH:mm:ss");
       if (!utcDate.isValid()) {
-        console.error("Invalid UTC parsing:", dateTime);
+        console.error("Invalid UTC parsing:", dateTimeStr);
         return "Invalid Date";
       }
 
       // Convert to IST
       const istDate = utcDate.tz("Asia/Kolkata");
       const formattedIST = istDate.format("DD-MM-YYYY hh:mm:ss A");
-      console.log("Converted to IST (from UTC):", formattedIST);
+      console.log("IST from UTC:", formattedIST);
 
-      // Test alternative: If stored as IST already
-      const istDirect = dayjs(dateTime).format("DD-MM-YYYY hh:mm:ss A");
-      console.log("Direct IST (no conversion):", istDirect);
-
-      // Test alternative: If stored as UTC+8
-      const utc8Date = dayjs.tz(dateTime, "Asia/Singapore");
-      const istFromUtc8 = utc8Date.tz("Asia/Kolkata").format("DD-MM-YYYY hh:mm:ss A");
-      console.log("Converted to IST (from UTC+8):", istFromUtc8);
-
-      // Return the UTC → IST conversion (adjust based on logs)
       return formattedIST;
     } catch (error) {
       console.error("Conversion error:", error);
