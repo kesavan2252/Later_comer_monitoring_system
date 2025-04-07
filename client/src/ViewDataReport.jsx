@@ -52,7 +52,7 @@ const ViewDataReport = () => {
       RollNo: row.roll_no,
       Name: row.name,
       Department: row.department,
-      DateTime: formatIST(row.date, row.time),
+      DateTime: row.datetime_ist,
       Batch: row.batch
     }));
 
@@ -78,7 +78,7 @@ const ViewDataReport = () => {
         row.roll_no,
         row.name,
         row.department,
-        formatIST(row.date, row.time),
+        row.datetime_ist,
         row.batch,
       ]);
     });
@@ -156,7 +156,7 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">{formatIST(row.date, row.time)}</td>
+                  <td className="py-3 px-6">{row.datetime_ist}</td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
