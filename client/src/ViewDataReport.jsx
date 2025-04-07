@@ -3,10 +3,15 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "./components/Sidebar";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable"; // ✅ Correct import
+import autoTable from "jspdf-autotable";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const ViewDataReport = () => {
   const navigate = useNavigate();
@@ -26,7 +31,6 @@ const ViewDataReport = () => {
         const response = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
         );
-        
 
         setTableData(response.data);
       } catch (error) {
@@ -37,9 +41,24 @@ const ViewDataReport = () => {
     fetchData();
   }, [startDate, endDate]);
 
-  // **Export as Excel**
+  // ✅ Export to Excel
   const exportToExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(tableData);
+    if (tableData.length === 0) {
+      alert("No data available to export.");
+      return;
+    }
+
+    const cleanData = tableData.map((row) => ({
+      "Roll No": row.roll_no,
+      "Name": row.name,
+      "Department": row.department,
+      "Date & Time": dayjs(`${row.date} ${row.time}`)
+        .tz("Asia/Kolkata")
+        .format("YYYY-MM-DD hh:mm A"),
+      Batch: row.batch,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(cleanData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Attendance Report");
 
@@ -48,8 +67,13 @@ const ViewDataReport = () => {
     saveAs(data, `Attendance_Report_${startDate}_to_${endDate}.xlsx`);
   };
 
-  // **Export as PDF**
+  // ✅ Export to PDF
   const exportToPDF = () => {
+    if (tableData.length === 0) {
+      alert("No data available to export.");
+      return;
+    }
+
     const doc = new jsPDF();
     doc.text(`Attendance Report (${startDate} to ${endDate})`, 20, 10);
 
@@ -61,12 +85,14 @@ const ViewDataReport = () => {
         row.roll_no,
         row.name,
         row.department,
-        `${row.date} ${row.time}`,
+        dayjs(`${row.date} ${row.time}`)
+          .tz("Asia/Kolkata")
+          .format("YYYY-MM-DD hh:mm A"),
         row.batch,
       ]);
     });
 
-    autoTable(doc, { // ✅ Fixed autoTable usage
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
@@ -79,7 +105,7 @@ const ViewDataReport = () => {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
       <div className="flex-1 p-6 ml-5">
-        {/* Header Section */}
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <button
             onClick={() => navigate(-1)}
@@ -88,7 +114,7 @@ const ViewDataReport = () => {
             &lt; Back
           </button>
 
-          {/* ✅ Export Dropdown */}
+          {/* Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -139,7 +165,11 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">{row.date} {row.time}</td>
+                  <td className="py-3 px-6">
+                    {dayjs(`${row.date} ${row.time}`)
+                      .tz("Asia/Kolkata")
+                      .format("YYYY-MM-DD hh:mm A")}
+                  </td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
