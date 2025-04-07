@@ -32,21 +32,25 @@ const convertTo24Hour = (time12h) => {
 };
 
 // ✅ Converts Southeast Asia time (UTC+8) to IST (UTC+5:30)
-const formatIST = (datetimeStr) => {
-  if (!datetimeStr) return "-";
-  const dateInIST = new Date(datetimeStr);
-  if (isNaN(dateInIST)) return "-";
+const formatIST = (dateStr, timeStr) => {
+  if (!dateStr || !timeStr) return "-";
 
-  return new Intl.DateTimeFormat("en-IN", {
-    timeZone: "Asia/Kolkata",
+  const [hours, minutes, seconds] = timeStr.split(":").map(Number);
+  const baseDate = new Date(dateStr);
+  baseDate.setHours(hours, minutes, seconds || 0);
+
+  // Subtract 2.5 hours (UTC+8 to IST)
+  const istDate = new Date(baseDate.getTime() - (2.5 * 60 * 60 * 1000));
+
+  return istDate.toLocaleString("en-IN", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-    hour12: true,
-  }).format(dateInIST);
+    hour12: true
+  });
 };
 
 const ViewDataReport = () => {
