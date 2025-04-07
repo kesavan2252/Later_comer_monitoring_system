@@ -20,15 +20,12 @@ const formatDateTimeIST = (dateStr, timeStr) => {
   if (!dateStr || !timeStr) return "Invalid Date";
 
   try {
-    // Combine into one string with a space instead of 'T'
-    const combined = new Date(`${dateStr} ${timeStr}`);
+    // Combine date and time into ISO format assuming it's in UTC
+    const utcDateTime = new Date(`${dateStr}T${timeStr}Z`);
+    if (isNaN(utcDateTime.getTime())) return "Invalid Date";
 
-    if (isNaN(combined.getTime())) {
-      console.error("Invalid datetime input:", { dateStr, timeStr });
-      return "Invalid Date";
-    }
-
-    return combined.toLocaleString("en-IN", {
+    // Convert to IST with 12-hour format
+    return utcDateTime.toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
       year: "numeric",
       month: "2-digit",
@@ -36,14 +33,13 @@ const formatDateTimeIST = (dateStr, timeStr) => {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-      hour12: true,
+      hour12: true, // 🔁 12-hour format with AM/PM
     });
   } catch (error) {
     console.error("IST conversion error:", error);
     return "Invalid Date";
   }
 };
-
 
   useEffect(() => {
     const fetchData = async () => {
