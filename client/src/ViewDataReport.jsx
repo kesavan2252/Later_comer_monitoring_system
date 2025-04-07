@@ -21,21 +21,21 @@ const ViewDataReport = () => {
   const [tableData, setTableData] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Convert timestamp from UTC+8 to IST
+  // Convert UTC timestamp to IST
   const formatDateTimeIST = (dateString) => {
     if (!dateString) return "Invalid Date";
 
     try {
-      // Parse the date assuming it's stored in UTC+8
-      const utc8Date = dayjs.tz(dateString, "Asia/Singapore"); // UTC+8
+      // Parse the date assuming it's in UTC
+      const utcDate = dayjs.utc(dateString);
 
-      if (!utc8Date.isValid()) {
+      if (!utcDate.isValid()) {
         console.error("Invalid date string:", dateString);
         return "Invalid Date";
       }
 
       // Convert to IST (UTC+5:30)
-      const istDate = utc8Date.tz("Asia/Kolkata");
+      const istDate = utcDate.tz("Asia/Kolkata");
 
       // Format to DD-MM-YYYY hh:mm:ss A
       return istDate.format("DD-MM-YYYY hh:mm:ss A");
@@ -119,7 +119,7 @@ const ViewDataReport = () => {
             onClick={() => navigate(-1)}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
           >
-            &lt; Back
+            < Back
           </button>
           <div className="relative">
             <button
