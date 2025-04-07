@@ -15,6 +15,23 @@ const ViewDataReport = () => {
   const [tableData, setTableData] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // ✅ Convert UTC date+time to IST formatted string
+  const convertToIST = (dateStr, timeStr) => {
+    const utcDate = new Date(`${dateStr}T${timeStr}Z`);
+    const istDate = new Date(utcDate.getTime() + 5.5 * 60 * 60 * 1000);
+
+    return istDate.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+      timeZone: "Asia/Kolkata",
+    });
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       if (!startDate || !endDate) return;
@@ -26,7 +43,6 @@ const ViewDataReport = () => {
         const response = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
         );
-        
 
         setTableData(response.data);
       } catch (error) {
@@ -39,7 +55,15 @@ const ViewDataReport = () => {
 
   // **Export as Excel**
   const exportToExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(tableData);
+    const dataForExport = tableData.map((row) => ({
+      RollNo: row.roll_no,
+      Name: row.name,
+      Department: row.department,
+      "Date & Time (IST)": convertToIST(row.date, row.time),
+      Batch: row.batch,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataForExport);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Attendance Report");
 
@@ -53,7 +77,7 @@ const ViewDataReport = () => {
     const doc = new jsPDF();
     doc.text(`Attendance Report (${startDate} to ${endDate})`, 20, 10);
 
-    const tableColumn = ["Roll No", "Name", "Department", "Date & Time", "Batch"];
+    const tableColumn = ["Roll No", "Name", "Department", "Date & Time (IST)", "Batch"];
     const tableRows = [];
 
     tableData.forEach((row) => {
@@ -61,12 +85,12 @@ const ViewDataReport = () => {
         row.roll_no,
         row.name,
         row.department,
-        `${row.date} ${row.time}`,
+        convertToIST(row.date, row.time),
         row.batch,
       ]);
     });
 
-    autoTable(doc, { // ✅ Fixed autoTable usage
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
@@ -88,7 +112,7 @@ const ViewDataReport = () => {
             &lt; Back
           </button>
 
-          {/* ✅ Export Dropdown */}
+          {/* Export Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -129,7 +153,7 @@ const ViewDataReport = () => {
                 <th className="py-3 px-6 text-left">Roll No</th>
                 <th className="py-3 px-6 text-left">Name</th>
                 <th className="py-3 px-6 text-left">Department</th>
-                <th className="py-3 px-6 text-left">Date & Time</th>
+                <th className="py-3 px-6 text-left">Date & Time (IST)</th>
                 <th className="py-3 px-6 text-left">Batch</th>
               </tr>
             </thead>
@@ -139,7 +163,7 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">{row.date} {row.time}</td>
+                  <td className="py-3 px-6">{convertToIST(row.date, row.time)}</td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
