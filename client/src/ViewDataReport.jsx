@@ -52,9 +52,7 @@ const ViewDataReport = () => {
       "Roll No": row.roll_no,
       "Name": row.name,
       "Department": row.department,
-      "Date & Time": dayjs(`${row.date} ${row.time}`)
-        .tz("Asia/Kolkata")
-        .format("YYYY-MM-DD hh:mm A"),
+      "Date & Time": dayjs.utc(`${row.date}T${row.time}`).tz("Asia/Kolkata").format("YYYY-MM-DD hh:mm A"),
       Batch: row.batch,
     }));
 
@@ -85,9 +83,7 @@ const ViewDataReport = () => {
         row.roll_no,
         row.name,
         row.department,
-        dayjs(`${row.date} ${row.time}`)
-          .tz("Asia/Kolkata")
-          .format("YYYY-MM-DD hh:mm A"),
+        dayjs.utc(`${row.date}T${row.time}`).tz("Asia/Kolkata").format("YYYY-MM-DD hh:mm A"),
         row.batch,
       ]);
     });
