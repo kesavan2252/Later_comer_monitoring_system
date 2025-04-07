@@ -317,26 +317,29 @@ export const filterAttendance = async (req, res) => {
     );
 
     // Format each row's date & time into IST
-    const formattedRows = result.rows.map(row => {
-      const isoString = `${row.date}T${row.time}`;
-      const utcDate = new Date(isoString);
+const formattedRows = result.rows.map(row => {
+  const isoString = `${row.date}T${row.time}`; // Example: "2025-04-07T09:15:00"
+  const southeastAsiaDate = new Date(isoString); // Interpreted in UTC
 
-      // Convert UTC to IST
-      const istDateTime = utcDate.toLocaleString("en-IN", {
-        timeZone: "Asia/Kolkata",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      });
+  // Manually subtract 2 hours 30 minutes to convert to IST
+  const istTime = new Date(southeastAsiaDate.getTime() - (2.5 * 60 * 60 * 1000));
 
-      return {
-        ...row,
-        datetime_ist: istDateTime
-      };
-    });
+  // Format to readable string (optional, or send raw timestamp to frontend)
+  const formattedIST = istTime.toLocaleString("en-IN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+
+  return {
+    ...row,
+    datetime_ist: formattedIST
+  };
+});
 
     res.json(formattedRows);
   } catch (error) {
