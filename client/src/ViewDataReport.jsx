@@ -17,26 +17,24 @@ const ViewDataReport = () => {
 
   // ✅ Convert UTC date+time to IST formatted string
 const convertToIST = (dateStr, timeStr) => {
-  console.log("Converting:", dateStr, timeStr); // 👈 Add this
-
   if (!dateStr || !timeStr) return "Invalid Date";
 
   try {
-    const utcDate = new Date(`${dateStr}T${timeStr}Z`);
-    if (isNaN(utcDate.getTime())) return "Invalid Date";
+    // Combine date and time into ISO format assuming it's in UTC
+    const utcDateTime = new Date(`${dateStr}T${timeStr}Z`);
+    if (isNaN(utcDateTime.getTime())) return "Invalid Date";
 
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istDate = new Date(utcDate.getTime() + istOffset);
-
-    const day = String(istDate.getDate()).padStart(2, "0");
-    const month = String(istDate.getMonth() + 1).padStart(2, "0");
-    const year = istDate.getFullYear();
-
-    const hours = String(istDate.getHours()).padStart(2, "0");
-    const minutes = String(istDate.getMinutes()).padStart(2, "0");
-    const seconds = String(istDate.getSeconds()).padStart(2, "0");
-
-    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    // Convert to IST using toLocaleString
+    return utcDateTime.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
   } catch (error) {
     console.error("IST conversion error:", error);
     return "Invalid Date";
