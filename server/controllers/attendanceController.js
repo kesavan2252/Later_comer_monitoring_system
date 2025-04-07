@@ -316,28 +316,25 @@ export const filterAttendance = async (req, res) => {
       [startDate, endDate]
     );
 
-    // IST Formatter (Asia/Kolkata)
-    const formatter = new Intl.DateTimeFormat("en-IN", {
-      timeZone: "Asia/Kolkata",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true
-    });
-
+    // Format each row's date & time into IST
     const formattedRows = result.rows.map(row => {
-      const utcDateTime = new Date(`${row.date}T${row.time}`);
+      const isoString = `${row.date}T${row.time}`;
+      const utcDate = new Date(isoString);
 
-      // Format to IST
-      const parts = formatter.formatToParts(utcDateTime);
-      const datePart = `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}`;
-      const timePart = `${parts.find(p => p.type === 'hour').value}:${parts.find(p => p.type === 'minute').value} ${parts.find(p => p.type === 'dayPeriod').value}`;
+      // Convert UTC to IST
+      const istDateTime = utcDate.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
 
       return {
         ...row,
-        datetime_ist: `${datePart} ${timePart}`
+        datetime_ist: istDateTime
       };
     });
 
