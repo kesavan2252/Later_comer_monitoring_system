@@ -16,31 +16,67 @@ const ViewDataReport = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Utility: Convert 12-hour time to 24-hour format if needed
-  const convertTo24Hour = (time12h) => {
-    if (!time12h) return "00:00:00";
-    if (!time12h.toUpperCase().includes("AM") && !time12h.toUpperCase().includes("PM"))
-      return time12h; // assume it's already 24-hour
-    const [time, modifier] = time12h.split(" ");
-    let [hours, minutes, seconds] = time.split(":");
-    hours = parseInt(hours, 10);
-    if (modifier.toUpperCase() === "PM" && hours !== 12) {
-      hours += 12;
-    } else if (modifier.toUpperCase() === "AM" && hours === 12) {
-      hours = 0;
-    }
-    return `${String(hours).padStart(2, "0")}:${minutes}:${seconds}`;
-  };
+// Convert 12-hour time to 24-hour format
+const convertTo24Hour = (time12h) => {
+  if (!time12h) return "00:00:00";
 
-  // Convert given dateStr and timeStr (in UTC+8) to IST (UTC+5:30)
-  const formatDateTimeIST = (dateStr, timeStr) => {
+  const upperTime = time12h.toUpperCase();
+  if (!upperTime.includes("AM") && !upperTime.includes("PM")) {
+    // Validate if it's already in 24-hour format (HH:mm:ss)
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
+    return timeRegex.test(time12h) ? time12h : "00:00:00";
+  }
+
+  const [time, modifier] = time12h.split(" ");
+  let [hours, minutes, seconds] = time.split(":").map(part => part || "0"); // Handle missing parts
+  hours = parseInt(hours, 10);
+
+  if (isNaN(hours) || !minutes || !seconds) return "00:00:00";
+
+  if (modifier.toUpperCase() === "PM" && hours !== 12) {
+    hours += 12;
+  } else if (modifier.toUpperCase() === "AM" && hours === 12) {
+    hours = 0;
+  }
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+};
+
+// Convert date and time from UTC+8 (Southeast Asia) to IST (UTC+5:30)
+const formatDateTimeIST = (dateStr, timeStr) => {
   if (!dateStr || !timeStr) return "Invalid Date";
 
   try {
-    // Combine date and time strings and assume it's UTC+8
-    const localDateTime = new Date(`${dateStr}T${timeStr}+08:00`);
+    // Validate dateStr format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(dateStr)) return "Invalid Date";
 
-    // Convert to IST (UTC+5:30) by using toLocaleString with timeZone
-    return localDateTime.toLocaleString("en-IN", {
+    // Convert time to 24-hour format
+    const time24 = convertTo24Hour(timeStr);
+    if (time24 === "00:00:00" && timeStr !== "00:00:00" && timeStr.toUpperCase() !== "12:00:00 AM") {
+      return "Invalid Time";
+    }
+
+    // Parse date and time components
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const [hours, minutes, seconds] = time24.split(":").map(Number);
+
+    // Validate parsed values
+    if (isNaN(year) || isNaN(month) || isNaN(day) || 
+        isNaN(hours) || isNaN(minutes) || isNaN(seconds)) {
+      return "Invalid Date";
+    }
+
+    // Create a UTC timestamp from UTC+8 input
+    // Subtract 8 hours to convert UTC+8 to UTC
+    const utcTimestamp = Date.UTC(year, month - 1, day, hours, minutes, seconds) - (8 * 60 * 60 * 1000);
+
+    // Add 5.5 hours to convert UTC to IST (UTC+5:30)
+    const istTimestamp = utcTimestamp + (5.5 * 60 * 60 * 1000);
+    const istDate = new Date(istTimestamp);
+
+    // Format the output consistently
+    return istDate.toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
       year: "numeric",
       month: "2-digit",
@@ -49,13 +85,17 @@ const ViewDataReport = () => {
       minute: "2-digit",
       second: "2-digit",
       hour12: true,
-    });
+    }).replace(/,/, ""); // Remove comma for cleaner output
   } catch (error) {
     console.error("IST conversion error:", error);
     return "Invalid Date";
   }
 };
 
+// Example usage
+console.log(formatDateTimeIST("2025-04-07", "02:30:00 PM")); // Should work in both local and Vercel
+console.log(formatDateTimeIST("2025-04-07", "23:45:00"));    // 24-hour format
+console.log(formatDateTimeIST("2025-04-07", "12:00:00 AM")); // Edge case
   useEffect(() => {
     const fetchData = async () => {
       if (!startDate || !endDate) return;
