@@ -26,25 +26,33 @@ const ViewDataReport = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!startDate || !endDate) return;
+  const fetchData = async () => {
+    if (!startDate || !endDate) return;
 
-      try {
-        const formattedStartDate = dayjs(startDate).format("YYYY-MM-DD");
-        const formattedEndDate = dayjs(endDate).format("YYYY-MM-DD");
+    try {
+      const formattedStartDate = dayjs(startDate).format("YYYY-MM-DD");
+      const formattedEndDate = dayjs(endDate).format("YYYY-MM-DD");
 
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
-        );
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
+      );
 
-        setTableData(response.data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
+      console.log("Fetched Data:", response.data); // ✅ Add this line
 
-    fetchData();
-  }, [startDate, endDate]);
+      // Optional: Format datetime if separate date and time exist
+      const formattedData = response.data.map(row => ({
+        ...row,
+        datetime_ist: row.datetime_ist || formatIST(row.date, row.time)
+      }));
+
+      setTableData(formattedData);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  fetchData();
+}, [startDate, endDate]);
 
   // ✅ Export as Excel
   const exportToExcel = () => {
