@@ -1,3 +1,4 @@
+// ... other imports
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -13,15 +14,14 @@ import autoTable from "jspdf-autotable";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// Helper to convert to IST
+// ✅ Updated formatIST function
 const formatIST = (date, time) => {
-  if (!date || !time) return "N/A"; // Or return "-" or ""
+  if (!date || !time) return "-";
   const datetime = dayjs.utc(`${date}T${time}`);
   return datetime.isValid()
     ? datetime.tz("Asia/Kolkata").format("YYYY-MM-DD hh:mm A")
-    : "Invalid Date";
+    : "-";
 };
-
 
 const ViewDataReport = () => {
   const navigate = useNavigate();
@@ -31,46 +31,43 @@ const ViewDataReport = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
-  const fetchData = async () => {
-    if (!startDate || !endDate) return;
+    const fetchData = async () => {
+      if (!startDate || !endDate) return;
 
-    try {
-      const formattedStartDate = dayjs(startDate).format("YYYY-MM-DD");
-      const formattedEndDate = dayjs(endDate).format("YYYY-MM-DD");
+      try {
+        const formattedStartDate = dayjs(startDate).format("YYYY-MM-DD");
+        const formattedEndDate = dayjs(endDate).format("YYYY-MM-DD");
 
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
-      );
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
+        );
 
-      console.log("Fetched Data:", response.data); // ✅ Add this line
+        console.log("Fetched Data:", response.data);
 
-      // Optional: Format datetime if separate date and time exist
-      const formattedData = response.data.map(row => {
-     console.log("Mapping row:", row.date, row.time);
-      return {
-       ...row,
-       datetime_ist: row.datetime_ist || formatIST(row.date, row.time)
-       };
-      });
+        const formattedData = response.data.map((row) => {
+          console.log("Mapping row:", row.date, row.time);
+          return {
+            ...row,
+            datetime_ist: row.datetime_ist || formatIST(row.date, row.time),
+          };
+        });
 
+        setTableData(formattedData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
 
-      setTableData(formattedData);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
+    fetchData();
+  }, [startDate, endDate]);
 
-  fetchData();
-}, [startDate, endDate]);
-
-  // ✅ Export as Excel
   const exportToExcel = () => {
-    const formattedData = tableData.map(row => ({
+    const formattedData = tableData.map((row) => ({
       RollNo: row.roll_no,
       Name: row.name,
       Department: row.department,
       DateTime: row.datetime_ist,
-      Batch: row.batch
+      Batch: row.batch,
     }));
 
     const ws = XLSX.utils.json_to_sheet(formattedData);
@@ -82,7 +79,6 @@ const ViewDataReport = () => {
     saveAs(data, `Attendance_Report_${startDate}_to_${endDate}.xlsx`);
   };
 
-  // ✅ Export as PDF
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text(`Attendance Report (${startDate} to ${endDate})`, 20, 10);
@@ -113,7 +109,6 @@ const ViewDataReport = () => {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
       <div className="flex-1 p-6 ml-5">
-        {/* Header Section */}
         <div className="flex justify-between items-center mb-6">
           <button
             onClick={() => navigate(-1)}
@@ -122,7 +117,6 @@ const ViewDataReport = () => {
             &lt; Back
           </button>
 
-          {/* Export Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -155,7 +149,6 @@ const ViewDataReport = () => {
           Showing results from {startDate} to {endDate}
         </h2>
 
-        {/* Table */}
         <div className="bg-white p-6 rounded-lg shadow-lg overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -173,7 +166,11 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">{row.datetime_ist}</td>
+                  <td className="py-3 px-6">
+                    {row.datetime_ist && row.datetime_ist !== "Invalid Date"
+                      ? row.datetime_ist
+                      : "-"}
+                  </td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
