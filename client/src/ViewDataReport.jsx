@@ -33,41 +33,28 @@ const ViewDataReport = () => {
 
   // Convert given dateStr and timeStr (in UTC+8) to IST (UTC+5:30)
   const formatDateTimeIST = (dateStr, timeStr) => {
-    if (!dateStr || !timeStr) return "Invalid Date";
+  if (!dateStr || !timeStr) return "Invalid Date";
 
-    try {
-      // If timeStr is in 12-hour format, convert it to 24-hour.
-      const time24 = convertTo24Hour(timeStr);
+  try {
+    // Combine date and time and parse as local time (if needed, add 'Z' to treat as UTC)
+    const utcDate = new Date(`${dateStr}T${timeStr}Z`);
 
-      // Parse the date and time parts (assume dateStr is "YYYY-MM-DD" and time24 is "HH:mm:ss")
-      const [year, month, day] = dateStr.split("-").map(Number);
-      const [h, m, s] = time24.split(":").map(Number);
-
-      // Create a UTC timestamp from the provided date and time as if it were in UTC+8.
-      // Since our values are in UTC+8, subtract 8 hours to get the true UTC.
-      const utcTimestamp = Date.UTC(year, month - 1, day, h, m, s) - (8 * 60 * 60 * 1000);
-
-      // Now, convert UTC to IST by adding 5.5 hours.
-      const istTimestamp = utcTimestamp + (2.5 * 60 * 60 * 1000);
-      const istDate = new Date(istTimestamp);
-
-      // Format the date in 12-hour format with AM/PM using toLocaleString,
-      // forcing the timeZone "Asia/Kolkata" to be safe.
-      return istDate.toLocaleString("en-IN", {
-        timeZone: "Asia/Kolkata",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      });
-    } catch (error) {
-      console.error("IST conversion error:", error);
-      return "Invalid Date";
-    }
-  };
+    // Convert to IST
+    return utcDate.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+  } catch (error) {
+    console.error("Error in IST conversion:", error);
+    return "Invalid Date";
+  }
+};
 
   useEffect(() => {
     const fetchData = async () => {
