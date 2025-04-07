@@ -25,8 +25,9 @@ const ViewDataReport = () => {
   const convertTo24Hour = (time12h) => {
     if (!time12h) return "00:00:00";
     const [time, modifier] = time12h.split(" ");
-    let [hours, minutes, seconds] = time.split(":");
+    let [hours, minutes, seconds] = time.split(":").map(part => part || "0");
     hours = parseInt(hours, 10);
+    if (isNaN(hours)) hours = 0;
     if (modifier.toUpperCase() === "PM" && hours !== 12) hours += 12;
     if (modifier.toUpperCase() === "AM" && hours === 12) hours = 0;
     return `${String(hours).padStart(2, "0")}:${minutes}:${seconds}`;
@@ -45,17 +46,17 @@ const ViewDataReport = () => {
       const dateTimeStr = `${dateString} ${time24h}`;
       console.log("Combined dateTimeStr:", dateTimeStr);
 
-      // Parse as UTC (assuming database stores in UTC)
-      const utcDate = dayjs.utc(dateTimeStr, "YYYY-MM-DD HH:mm:ss");
-      if (!utcDate.isValid()) {
-        console.error("Invalid UTC parsing:", dateTimeStr);
+      // Parse as local time (assuming database stores time in local format, e.g., IST)
+      const localDate = dayjs(dateTimeStr, "YYYY-MM-DD HH:mm:ss");
+      if (!localDate.isValid()) {
+        console.error("Invalid local parsing:", dateTimeStr);
         return "Invalid Date";
       }
 
-      // Convert to IST
-      const istDate = utcDate.tz("Asia/Kolkata");
+      // Convert to IST (assuming input is already in IST or local time)
+      const istDate = localDate.tz("Asia/Kolkata");
       const formattedIST = istDate.format("DD-MM-YYYY hh:mm:ss A");
-      console.log("IST from UTC:", formattedIST);
+      console.log("Formatted IST:", formattedIST);
 
       return formattedIST;
     } catch (error) {
