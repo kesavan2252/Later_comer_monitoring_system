@@ -21,26 +21,48 @@ const ViewDataReport = () => {
   const [tableData, setTableData] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Convert UTC timestamp to IST
-  const formatDateTimeIST = (dateString) => {
+  // Flexible date-time conversion function with debugging
+  const formatDateTimeIST = (dateString, timeString) => {
     if (!dateString) return "Invalid Date";
 
-    try {
-      // Parse the date assuming it's in UTC
-      const utcDate = dayjs.utc(dateString);
+    console.log("Input dateString:", dateString, "timeString:", timeString);
 
+    try {
+      let dateTime;
+
+      // If timeString is provided, combine it with CavalierdateString
+      if (timeString) {
+        dateTime = `${dateString} ${timeString}`;
+        console.log("Combined dateTime:", dateTime);
+      } else {
+        dateTime = dateString;
+      }
+
+      // Parse assuming the timestamp is in UTC (most common database practice)
+      const utcDate = dayjs.utc(dateTime);
       if (!utcDate.isValid()) {
-        console.error("Invalid date string:", dateString);
+        console.error("Invalid UTC parsing:", dateTime);
         return "Invalid Date";
       }
 
-      // Convert to IST (UTC+5:30)
+      // Convert to IST
       const istDate = utcDate.tz("Asia/Kolkata");
+      const formattedIST = istDate.format("DD-MM-YYYY hh:mm:ss A");
+      console.log("Converted to IST (from UTC):", formattedIST);
 
-      // Format to DD-MM-YYYY hh:mm:ss A
-      return istDate.format("DD-MM-YYYY hh:mm:ss A");
+      // Test alternative: If stored as IST already
+      const istDirect = dayjs(dateTime).format("DD-MM-YYYY hh:mm:ss A");
+      console.log("Direct IST (no conversion):", istDirect);
+
+      // Test alternative: If stored as UTC+8
+      const utc8Date = dayjs.tz(dateTime, "Asia/Singapore");
+      const istFromUtc8 = utc8Date.tz("Asia/Kolkata").format("DD-MM-YYYY hh:mm:ss A");
+      console.log("Converted to IST (from UTC+8):", istFromUtc8);
+
+      // Return the UTC → IST conversion (adjust based on logs)
+      return formattedIST;
     } catch (error) {
-      console.error("IST conversion error:", error);
+      console.error("Conversion error:", error);
       return "Invalid Date";
     }
   };
@@ -76,7 +98,7 @@ const ViewDataReport = () => {
       RollNo: row.roll_no,
       Name: row.name,
       Department: row.department,
-      "Date & Time (IST)": formatDateTimeIST(row.date),
+      "Date & Time (IST)": formatDateTimeIST(row.date, row.time),
       Batch: row.batch,
     }));
 
@@ -97,7 +119,7 @@ const ViewDataReport = () => {
       row.roll_no,
       row.name,
       row.department,
-      formatDateTimeIST(row.date),
+      formatDateTimeIST(row.date, row.time),
       row.batch,
     ]);
 
@@ -169,7 +191,7 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">{formatDateTimeIST(row.date)}</td>
+                  <td className="py-3 px-6">{formatDateTimeIST(row.date, row.time)}</td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
