@@ -15,12 +15,30 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 // ✅ Updated formatIST function
+// ✅ Converts Southeast Asia time (UTC+8) to IST (UTC+5:30)
 const formatIST = (date, time) => {
   if (!date || !time) return "-";
-  const datetime = dayjs.utc(`${date}T${time}`);
-  return datetime.isValid()
-    ? datetime.tz("Asia/Kolkata").format("YYYY-MM-DD hh:mm A")
-    : "-";
+
+  // Combine date and time into a string (assume it's stored in UTC+8)
+  const seAsiaDateTime = new Date(`${date}T${time}+08:00`);
+
+  // Convert it to IST (Asia/Kolkata)
+  const formatter = new Intl.DateTimeFormat("en-IN", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  const parts = formatter.formatToParts(seAsiaDateTime);
+
+  const datePart = `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}`;
+  const timePart = `${parts.find(p => p.type === 'hour').value}:${parts.find(p => p.type === 'minute').value} ${parts.find(p => p.type === 'dayPeriod').value}`;
+
+  return `${datePart} ${timePart}`;
 };
 
 const ViewDataReport = () => {
