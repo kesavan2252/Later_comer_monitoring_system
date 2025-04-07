@@ -36,22 +36,13 @@ const formatIST = (dateStr, timeStr) => {
   if (!dateStr || !timeStr) return "-";
 
   const [hours, minutes, seconds] = timeStr.split(":").map(Number);
-  const baseDate = new Date(dateStr);
-  baseDate.setHours(hours, minutes, seconds || 0);
 
-  // Subtract 2.5 hours (UTC+8 to IST)
-  const istDate = new Date(baseDate.getTime() - (2.5 * 60 * 60 * 1000));
+  const combined = dayjs(`${dateStr}T${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`)
+    .tz("Asia/Kolkata");
 
-  return istDate.toLocaleString("en-IN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true
-  });
+  return combined.format("DD/MM/YYYY hh:mm:ss A");
 };
+
 
 const ViewDataReport = () => {
   const navigate = useNavigate();
