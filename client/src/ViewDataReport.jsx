@@ -3,10 +3,16 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "./components/Sidebar";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc"; // Import UTC plugin
+import timezone from "dayjs/plugin/timezone"; // Import timezone plugin
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable"; // ✅ Correct import
+import autoTable from "jspdf-autotable";
+
+// Initialize dayjs plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const ViewDataReport = () => {
   const navigate = useNavigate();
@@ -15,87 +21,33 @@ const ViewDataReport = () => {
   const [tableData, setTableData] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Utility: Convert 12-hour time to 24-hour format if needed
-// Convert 12-hour time to 24-hour format
-const convertTo24Hour = (time12h) => {
-  if (!time12h) return "00:00:00";
+  // Convert UTC+8 date-time to IST (UTC+5:30)
+  const formatDateTimeIST = (dateStr, timeStr) => {
+    if (!dateStr || !timeStr) return "Invalid Date";
 
-  const upperTime = time12h.toUpperCase();
-  if (!upperTime.includes("AM") && !upperTime.includes("PM")) {
-    // Validate if it's already in 24-hour format (HH:mm:ss)
-    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
-    return timeRegex.test(time12h) ? time12h : "00:00:00";
-  }
+    try {
+      // Combine date and time into a single string
+      const dateTimeStr = `${dateStr} ${timeStr}`;
+      
+      // Parse the combined string assuming it's in UTC+8
+      const utc8Date = dayjs.tz(dateTimeStr, "YYYY-MM-DD HH:mm:ss", "Asia/Singapore"); // Southeast Asia (UTC+8)
 
-  const [time, modifier] = time12h.split(" ");
-  let [hours, minutes, seconds] = time.split(":").map(part => part || "0"); // Handle missing parts
-  hours = parseInt(hours, 10);
+      if (!utc8Date.isValid()) {
+        console.error("Invalid date-time parsing:", dateTimeStr);
+        return "Invalid Date";
+      }
 
-  if (isNaN(hours) || !minutes || !seconds) return "00:00:00";
+      // Convert to IST (Asia/Kolkata)
+      const istDate = utc8Date.tz("Asia/Kolkata");
 
-  if (modifier.toUpperCase() === "PM" && hours !== 12) {
-    hours += 12;
-  } else if (modifier.toUpperCase() === "AM" && hours === 12) {
-    hours = 0;
-  }
-
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-};
-
-// Convert date and time from UTC+8 (Southeast Asia) to IST (UTC+5:30)
-const formatDateTimeIST = (dateStr, timeStr) => {
-  if (!dateStr || !timeStr) return "Invalid Date";
-
-  try {
-    // Validate dateStr format (YYYY-MM-DD)
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(dateStr)) return "Invalid Date";
-
-    // Convert time to 24-hour format
-    const time24 = convertTo24Hour(timeStr);
-    if (time24 === "00:00:00" && timeStr !== "00:00:00" && timeStr.toUpperCase() !== "12:00:00 AM") {
-      return "Invalid Time";
-    }
-
-    // Parse date and time components
-    const [year, month, day] = dateStr.split("-").map(Number);
-    const [hours, minutes, seconds] = time24.split(":").map(Number);
-
-    // Validate parsed values
-    if (isNaN(year) || isNaN(month) || isNaN(day) || 
-        isNaN(hours) || isNaN(minutes) || isNaN(seconds)) {
+      // Format to 12-hour with AM/PM
+      return istDate.format("DD-MM-YYYY hh:mm:ss A");
+    } catch (error) {
+      console.error("IST conversion error:", error);
       return "Invalid Date";
     }
+  };
 
-    // Create a UTC timestamp from UTC+8 input
-    // Subtract 8 hours to convert UTC+8 to UTC
-    const utcTimestamp = Date.UTC(year, month - 1, day, hours, minutes, seconds) - (8 * 60 * 60 * 1000);
-
-    // Add 5.5 hours to convert UTC to IST (UTC+5:30)
-    const istTimestamp = utcTimestamp + (5.5 * 60 * 60 * 1000);
-    const istDate = new Date(istTimestamp);
-
-    // Format the output consistently
-    return istDate.toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-    }).replace(/,/, ""); // Remove comma for cleaner output
-  } catch (error) {
-    console.error("IST conversion error:", error);
-    return "Invalid Date";
-  }
-};
-
-// Example usage
-console.log(formatDateTimeIST("2025-04-07", "02:30:00 PM")); // Should work in both local and Vercel
-console.log(formatDateTimeIST("2025-04-07", "23:45:00"));    // 24-hour format
-console.log(formatDateTimeIST("2025-04-07", "12:00:00 AM")); // Edge case
   useEffect(() => {
     const fetchData = async () => {
       if (!startDate || !endDate) return;
@@ -110,8 +62,11 @@ console.log(formatDateTimeIST("2025-04-07", "12:00:00 AM")); // Edge case
 
         console.log("Fetched Data:", response.data);
 
-        // We assume backend sends separate date and time fields.
-        // No further mapping is required if backend data is valid.
+        // Log each row's date and time to debug
+        response.data.forEach((row, index) => {
+          console.log(`Row ${index}: date=${row.date}, time=${row.time}`);
+        });
+
         setTableData(response.data);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -134,7 +89,6 @@ console.log(formatDateTimeIST("2025-04-07", "12:00:00 AM")); // Edge case
     const ws = XLSX.utils.json_to_sheet(dataForExport);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Attendance Report");
-
     const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(blob, `Attendance_Report_${startDate}_to_${endDate}.xlsx`);
@@ -146,17 +100,13 @@ console.log(formatDateTimeIST("2025-04-07", "12:00:00 AM")); // Edge case
     doc.text(`Attendance Report (${startDate} to ${endDate})`, 20, 10);
 
     const tableColumn = ["Roll No", "Name", "Department", "Date & Time (IST)", "Batch"];
-    const tableRows = [];
-
-    tableData.forEach((row) => {
-      tableRows.push([
-        row.roll_no,
-        row.name,
-        row.department,
-        formatDateTimeIST(row.date, row.time),
-        row.batch,
-      ]);
-    });
+    const tableRows = tableData.map((row) => [
+      row.roll_no,
+      row.name,
+      row.department,
+      formatDateTimeIST(row.date, row.time),
+      row.batch,
+    ]);
 
     autoTable(doc, {
       head: [tableColumn],
@@ -171,7 +121,6 @@ console.log(formatDateTimeIST("2025-04-07", "12:00:00 AM")); // Edge case
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
       <div className="flex-1 p-6 ml-5">
-        {/* Header Section */}
         <div className="flex justify-between items-center mb-6">
           <button
             onClick={() => navigate(-1)}
@@ -179,8 +128,6 @@ console.log(formatDateTimeIST("2025-04-07", "12:00:00 AM")); // Edge case
           >
             &lt; Back
           </button>
-
-          {/* Export Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -189,7 +136,6 @@ console.log(formatDateTimeIST("2025-04-07", "12:00:00 AM")); // Edge case
             >
               Export ▼
             </button>
-
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg">
                 <button
@@ -213,7 +159,6 @@ console.log(formatDateTimeIST("2025-04-07", "12:00:00 AM")); // Edge case
           Showing results from {startDate} to {endDate}
         </h2>
 
-        {/* Table */}
         <div className="bg-white p-6 rounded-lg shadow-lg overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
