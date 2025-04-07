@@ -15,30 +15,39 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 // ✅ Updated formatIST function
+const convertTo24Hour = (time12h) => {
+  if (!time12h) return "00:00:00";
+  const [time, modifier] = time12h.split(" ");
+  let [hours, minutes, seconds] = time.split(":");
+
+  hours = parseInt(hours, 10);
+
+  if (modifier === "PM" && hours !== 12) {
+    hours += 12;
+  } else if (modifier === "AM" && hours === 12) {
+    hours = 0;
+  }
+
+  return `${String(hours).padStart(2, "0")}:${minutes}:${seconds}`;
+};
+
 // ✅ Converts Southeast Asia time (UTC+8) to IST (UTC+5:30)
-const formatIST = (datetime) => {
-  if (!datetime) return "-";
+const formatIST = (datetimeStr) => {
+  if (!datetimeStr) return "-";
+  const dateInIST = new Date(datetimeStr);
+  if (isNaN(dateInIST)) return "-";
 
-  const dateInIST = new Date(datetime); // assumes ISO string (UTC) from backend
-
-  const formatter = new Intl.DateTimeFormat("en-IN", {
+  return new Intl.DateTimeFormat("en-IN", {
     timeZone: "Asia/Kolkata",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: true,
-  });
-
-  const parts = formatter.formatToParts(dateInIST);
-
-  const datePart = `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}`;
-  const timePart = `${parts.find(p => p.type === 'hour').value}:${parts.find(p => p.type === 'minute').value} ${parts.find(p => p.type === 'dayPeriod').value}`;
-
-  return `${datePart} ${timePart}`;
+  }).format(dateInIST);
 };
-
 
 const ViewDataReport = () => {
   const navigate = useNavigate();
@@ -61,13 +70,24 @@ const ViewDataReport = () => {
 
         console.log("Fetched Data:", response.data);
 
-        const formattedData = response.data.map((row) => {
-          console.log("Mapping row:", row.date, row.time);
-          return {
-            ...row,
-            datetime_ist: row.datetime_ist || formatIST(`${row.date}T${row.time}`),
-          };
-        });
+        const formattedData = data.map((row) => {
+  let datetime_ist = "-";
+  if (row.date && row.time) {
+    const time24 = convertTo24Hour(row.time); // 🆕 convert AM/PM to 24h
+    const combined = `${row.date}T${time24}`; // 🆕 valid format
+    datetime_ist = formatIST(combined);       // ✅ no error now
+    console.log("Mapping row:", combined);    // Optional: For debugging
+  }
+
+  return {
+    roll_no: row.roll_no,
+    name: row.name,
+    department: row.department,
+    batch: row.batch,
+    datetime_ist,
+  };
+});
+
 
         setTableData(formattedData);
       } catch (error) {
