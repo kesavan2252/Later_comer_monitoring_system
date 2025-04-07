@@ -3,16 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "./components/Sidebar";
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc"; // Import UTC plugin
-import timezone from "dayjs/plugin/timezone"; // Import timezone plugin
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
-// Initialize dayjs plugins
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 const ViewDataReport = () => {
   const navigate = useNavigate();
@@ -21,27 +15,26 @@ const ViewDataReport = () => {
   const [tableData, setTableData] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Convert UTC+8 date-time to IST (UTC+5:30)
-  const formatDateTimeIST = (dateStr, timeStr) => {
-    if (!dateStr || !timeStr) return "Invalid Date";
-
+  // Function to format date and time in IST (adapted from StudentReportDetails)
+  const formatDateTimeIST = (dateString) => {
+    if (!dateString) return "Invalid Date";
+    
     try {
-      // Combine date and time into a single string
-      const dateTimeStr = `${dateStr} ${timeStr}`;
-      
-      // Parse the combined string assuming it's in UTC+8
-      const utc8Date = dayjs.tz(dateTimeStr, "YYYY-MM-DD HH:mm:ss", "Asia/Singapore"); // Southeast Asia (UTC+8)
-
-      if (!utc8Date.isValid()) {
-        console.error("Invalid date-time parsing:", dateTimeStr);
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.error("Invalid date string:", dateString);
         return "Invalid Date";
       }
-
-      // Convert to IST (Asia/Kolkata)
-      const istDate = utc8Date.tz("Asia/Kolkata");
-
-      // Format to 12-hour with AM/PM
-      return istDate.format("DD-MM-YYYY hh:mm:ss A");
+      return date.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      }).replace(/,/, ""); // Remove comma for consistency
     } catch (error) {
       console.error("IST conversion error:", error);
       return "Invalid Date";
@@ -61,8 +54,6 @@ const ViewDataReport = () => {
         );
 
         console.log("Fetched Data:", response.data);
-
-        // Log each row's date and time to debug
         response.data.forEach((row, index) => {
           console.log(`Row ${index}: date=${row.date}, time=${row.time}`);
         });
@@ -76,13 +67,12 @@ const ViewDataReport = () => {
     fetchData();
   }, [startDate, endDate]);
 
-  // Export as Excel
   const exportToExcel = () => {
     const dataForExport = tableData.map((row) => ({
       RollNo: row.roll_no,
       Name: row.name,
       Department: row.department,
-      "Date & Time (IST)": formatDateTimeIST(row.date, row.time),
+      "Date & Time (IST)": formatDateTimeIST(row.date), // Use only row.date
       Batch: row.batch,
     }));
 
@@ -94,7 +84,6 @@ const ViewDataReport = () => {
     saveAs(blob, `Attendance_Report_${startDate}_to_${endDate}.xlsx`);
   };
 
-  // Export as PDF
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text(`Attendance Report (${startDate} to ${endDate})`, 20, 10);
@@ -104,7 +93,7 @@ const ViewDataReport = () => {
       row.roll_no,
       row.name,
       row.department,
-      formatDateTimeIST(row.date, row.time),
+      formatDateTimeIST(row.date), // Use only row.date
       row.batch,
     ]);
 
@@ -176,9 +165,7 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">
-                    {formatDateTimeIST(row.date, row.time)}
-                  </td>
+                  <td className="py-3 px-6">{formatDateTimeIST(row.date)}</td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
