@@ -15,88 +15,85 @@ const ViewDataReport = () => {
   const [tableData, setTableData] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Function to format date and time in IST (adapted from StudentReportDetails)
+  // Function to format date and time in IST
   const formatDateTimeIST = (dateString, timeString) => {
-  if (!dateString || !timeString) return "Invalid Date";
-
-  try {
-    // Split time into components
-    const [time, period] = timeString.trim().split(/(\s+)/).filter(Boolean);
-    const [hours, minutes, seconds] = time.split(":");
-    let hour = parseInt(hours, 10);
-
-    // Convert 12-hour to 24-hour format
-    if (period.trim().toUpperCase() === "PM" && hour !== 12) hour += 12;
-    if (period.trim().toUpperCase() === "AM" && hour === 12) hour = 0;
-
-    // Create a Date object from the UTC date and time
-    const date = new Date(dateString);
-    date.setUTCHours(hour, parseInt(minutes, 10), parseInt(seconds, 10), 0);
-
-    if (isNaN(date.getTime())) {
-      console.error("Invalid date or time string:", `${dateString} ${timeString}`);
-      return "Invalid Date";
-    }
-
-    // Convert UTC to IST (add 5 hours and 30 minutes)
-    const istOffsetMs = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
-    const istDate = new Date(date.getTime() + istOffsetMs);
-
-    // Format the date and time manually
-    const day = String(istDate.getUTCDate()).padStart(2, "0");
-    const month = String(istDate.getUTCMonth() + 1).padStart(2, "0"); // Months are 0-based
-    const year = istDate.getUTCFullYear();
-    let displayHours = istDate.getUTCHours();
-    const displayMinutes = String(istDate.getUTCMinutes()).padStart(2, "0");
-    const displaySeconds = String(istDate.getUTCSeconds()).padStart(2, "0");
-
-    // Convert to 12-hour format with AM/PM
-    const displayPeriod = displayHours >= 12 ? "PM" : "AM";
-    displayHours = displayHours % 12 || 12; // Convert 0 to 12 for midnight/noon
-    displayHours = String(displayHours).padStart(2, "0");
-
-    return `${day}/${month}/${year} ${displayHours}:${displayMinutes}:${displaySeconds} ${displayPeriod}`;
-  } catch (error) {
-    console.error("IST conversion error:", error);
-    return "Invalid Date";
-  }
-};
-
-  // In useEffect (logging for debugging)
-useEffect(() => {
-  const fetchData = async () => {
-    if (!startDate || !endDate) return;
+    if (!dateString || !timeString) return "Invalid Date";
 
     try {
-      const formattedStartDate = dayjs(startDate).format("YYYY-MM-DD");
-      const formattedEndDate = dayjs(endDate).format("YYYY-MM-DD");
+      // Split time into components
+      const [time, period] = timeString.trim().split(/(\s+)/).filter(Boolean);
+      const [hours, minutes, seconds] = time.split(":");
+      let hour = parseInt(hours, 10);
 
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
-      );
+      // Convert 12-hour to 24-hour format
+      if (period.trim().toUpperCase() === "PM" && hour !== 12) hour += 12;
+      if (period.trim().toUpperCase() === "AM" && hour === 12) hour = 0;
 
-      console.log("Fetched Data:", response.data);
-      response.data.forEach((row, index) => {
-        console.log(`Row ${index}: date=${row.date}, time=${row.time}, Converted=${formatDateTimeIST(row.date, row.time)}`);
-      });
+      // Create a Date object from the UTC date and time
+      const date = new Date(dateString);
+      date.setUTCHours(hour, parseInt(minutes, 10), parseInt(seconds, 10), 0);
 
-      setTableData(response.data);
+      if (isNaN(date.getTime())) {
+        console.error("Invalid date or time string:", `${dateString} ${timeString}`);
+        return "Invalid Date";
+      }
+
+      // Convert UTC to IST (add 5 hours and 30 minutes)
+      const istOffsetMs = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
+      const istDate = new Date(date.getTime() + istOffsetMs);
+
+      // Format the date and time manually
+      const day = String(istDate.getUTCDate()).padStart(2, "0");
+      const month = String(istDate.getUTCMonth() + 1).padStart(2, "0"); // Months are 0-based
+      const year = istDate.getUTCFullYear();
+      let displayHours = istDate.getUTCHours();
+      const displayMinutes = String(istDate.getUTCMinutes()).padStart(2, "0");
+      const displaySeconds = String(istDate.getUTCSeconds()).padStart(2, "0");
+
+      // Convert to 12-hour format with AM/PM
+      const displayPeriod = displayHours >= 12 ? "PM" : "AM";
+      displayHours = displayHours % 12 || 12; // Convert 0 to 12 for midnight/noon
+      displayHours = String(displayHours).padStart(2, "0");
+
+      return `${day}/${month}/${year} ${displayHours}:${displayMinutes}:${displaySeconds} ${displayPeriod}`;
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("IST conversion error:", error);
+      return "Invalid Date";
     }
   };
 
-  fetchData();
-}, [startDate, endDate]);
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!startDate || !endDate) return;
 
-// In the table rendering
-<td className="py-3 px-6">{formatDateTimeIST(row.date, row.time)}</td>
+      try {
+        const formattedStartDate = dayjs(startDate).format("YYYY-MM-DD");
+        const formattedEndDate = dayjs(endDate).format("YYYY-MM-DD");
+
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
+        );
+
+        console.log("Fetched Data:", response.data);
+        response.data.forEach((row, index) => {
+          console.log(`Row ${index}: date=${row.date}, time=${row.time}, Converted=${formatDateTimeIST(row.date, row.time)}`);
+        });
+
+        setTableData(response.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, [startDate, endDate]);
+
   const exportToExcel = () => {
     const dataForExport = tableData.map((row) => ({
       RollNo: row.roll_no,
       Name: row.name,
       Department: row.department,
-      "Date & Time (IST)": formatDateTimeIST(row.date), // Use only row.date
+      "Date & Time (IST)": formatDateTimeIST(row.date, row.time), // Use both date and time
       Batch: row.batch,
     }));
 
@@ -117,7 +114,7 @@ useEffect(() => {
       row.roll_no,
       row.name,
       row.department,
-      formatDateTimeIST(row.date), // Use only row.date
+      formatDateTimeIST(row.date, row.time), // Use both date and time
       row.batch,
     ]);
 
