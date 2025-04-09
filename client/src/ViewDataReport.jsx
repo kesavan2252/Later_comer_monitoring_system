@@ -16,27 +16,30 @@ const ViewDataReport = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Function to format date and time in IST (adapted from StudentReportDetails)
-  const formatDateTimeIST = (dateString) => {
-  if (!dateString) return "Invalid Date";
+  const formatDateTimeIST = (dateString, timeString) => {
+  if (!dateString || !timeString) return "Invalid Date";
 
   try {
-    // Create a Date object from the input string (assumed to be in UTC+8)
-    const date = new Date(dateString);
+    // Combine date and time into a single string (e.g., "2025-04-07 4:23:58 PM")
+    const fullDateTime = `${dateString} ${timeString.replace(" PM", " PM").replace(" AM", " AM")}`;
+    
+    // Parse the combined string into a Date object
+    // Note: Browser parsing of "MM/DD/YYYY HH:MM:SS AM/PM" can vary; ensure consistency
+    const date = new Date(fullDateTime);
+
     if (isNaN(date.getTime())) {
-      console.error("Invalid date string:", dateString);
+      console.error("Invalid date or time string:", fullDateTime);
       return "Invalid Date";
     }
 
-    // Adjust for IST (UTC+5:30)
-    // Southeast Asia (UTC+8) to IST (UTC+5:30) = -2 hours and -30 minutes
-    const istOffset = 5.5 * 60; // IST offset in minutes (5 hours 30 minutes)
-    const southeastAsiaOffset = 8 * 60; // Southeast Asia offset in minutes (8 hours)
-    const timeDifference = southeastAsiaOffset - istOffset; // Difference in minutes (150 minutes)
+    // Assume the input is in IST (UTC+5:30) already, as per your database
+    // If your database is in Southeast Asia (UTC+8), adjust by subtracting 2.5 hours
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
+    const southeastAsiaOffset = 8 * 60 * 60 * 1000; // Southeast Asia offset in milliseconds
+    const timeDifference = southeastAsiaOffset - istOffset; // Difference in milliseconds
+    const istDate = new Date(date.getTime() - timeDifference);
 
-    // Subtract the time difference to convert to IST
-    const istDate = new Date(date.getTime() - timeDifference * 60 * 1000);
-
-    // Format the date and time manually to match your desired output
+    // Format the date and time manually
     const day = String(istDate.getUTCDate()).padStart(2, "0");
     const month = String(istDate.getUTCMonth() + 1).padStart(2, "0"); // Months are 0-based
     const year = istDate.getUTCFullYear();
@@ -49,7 +52,6 @@ const ViewDataReport = () => {
     hours = hours % 12 || 12; // Convert 0 to 12 for midnight/noon
     hours = String(hours).padStart(2, "0");
 
-    // Return formatted string in "DD/MM/YYYY HH:MM:SS AM/PM" format
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds} ${period}`;
   } catch (error) {
     console.error("IST conversion error:", error);
@@ -57,30 +59,30 @@ const ViewDataReport = () => {
   }
 };
   useEffect(() => {
-    const fetchData = async () => {
-      if (!startDate || !endDate) return;
+  const fetchData = async () => {
+    if (!startDate || !endDate) return;
 
-      try {
-        const formattedStartDate = dayjs(startDate).format("YYYY-MM-DD");
-        const formattedEndDate = dayjs(endDate).format("YYYY-MM-DD");
+    try {
+      const formattedStartDate = dayjs(startDate).format("YYYY-MM-DD");
+      const formattedEndDate = dayjs(endDate).format("YYYY-MM-DD");
 
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
-        );
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
+      );
 
-        console.log("Fetched Data:", response.data);
-        response.data.forEach((row, index) => {
-          console.log(`Row ${index}: date=${row.date}, time=${row.time}`);
-        });
+      console.log("Fetched Data:", response.data);
+      response.data.forEach((row, index) => {
+        console.log(`Row ${index}: date=${row.date}, time=${row.time}`);
+      });
 
-        setTableData(response.data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
+      setTableData(response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
 
-    fetchData();
-  }, [startDate, endDate]);
+  fetchData();
+}, [startDate, endDate]);
 
   const exportToExcel = () => {
     const dataForExport = tableData.map((row) => ({
@@ -180,7 +182,7 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">{formatDateTimeIST(row.date)}</td>
+                  <td className="py-3 px-6">{formatDateTimeIST(row.date, row.time)}</td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
