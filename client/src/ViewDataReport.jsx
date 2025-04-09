@@ -20,63 +20,49 @@ const ViewDataReport = () => {
   if (!dateString || !timeString) return "Invalid Date";
 
   try {
-    // Combine date and time into a single string (e.g., "2025-04-07 4:23:58 PM")
-    const fullDateTime = `${dateString} ${timeString.replace(" PM", " PM").replace(" AM", " AM")}`;
+    // Combine date and time into a single string
+    // Ensure timeString is in a parseable format (e.g., "4:23:58 PM")
+    const fullDateTime = `${dateString} ${timeString.trim()}`;
     
     // Parse the combined string into a Date object
-    // Note: Browser parsing of "MM/DD/YYYY HH:MM:SS AM/PM" can vary; ensure consistency
-    const date = new Date(fullDateTime);
+    // Note: JavaScript Date parsing with 12-hour format can be tricky; let's split and construct manually
+    const [time, period] = timeString.split(/(\s+)/).filter(Boolean); // Split time and AM/PM
+    const [hours, minutes, seconds] = time.split(":");
+    let hour = parseInt(hours, 10);
+    
+    // Convert 12-hour to 24-hour format
+    if (period.trim().toUpperCase() === "PM" && hour !== 12) hour += 12;
+    if (period.trim().toUpperCase() === "AM" && hour === 12) hour = 0;
+
+    // Create Date object using UTC methods to avoid local timezone interference
+    const date = new Date(dateString);
+    date.setUTCHours(hour, parseInt(minutes, 10), parseInt(seconds, 10), 0);
 
     if (isNaN(date.getTime())) {
       console.error("Invalid date or time string:", fullDateTime);
       return "Invalid Date";
     }
 
-    // Assume the input is in IST (UTC+5:30) already, as per your database
-    // If your database is in Southeast Asia (UTC+8), adjust by subtracting 2.5 hours
-    const istOffset = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
-    const southeastAsiaOffset = 8 * 60 * 60 * 1000; // Southeast Asia offset in milliseconds
-    const timeDifference = southeastAsiaOffset - istOffset; // Difference in milliseconds
-    const istDate = new Date(date.getTime() - timeDifference);
-
-    // Format the date and time manually
-    const day = String(istDate.getUTCDate()).padStart(2, "0");
-    const month = String(istDate.getUTCMonth() + 1).padStart(2, "0"); // Months are 0-based
-    const year = istDate.getUTCFullYear();
-    let hours = istDate.getUTCHours();
-    const minutes = String(istDate.getUTCMinutes()).padStart(2, "0");
-    const seconds = String(istDate.getUTCSeconds()).padStart(2, "0");
+    // Format the date and time manually (assuming IST is the target)
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0"); // Months are 0-based
+    const year = date.getUTCFullYear();
+    let displayHours = date.getUTCHours();
+    const displayMinutes = String(date.getUTCMinutes()).padStart(2, "0");
+    const displaySeconds = String(date.getUTCSeconds()).padStart(2, "0");
     
     // Convert to 12-hour format with AM/PM
-    const period = hours >= 12 ? "PM" : "AM";
-    hours = hours % 12 || 12; // Convert 0 to 12 for midnight/noon
-    hours = String(hours).padStart(2, "0");
+    const displayPeriod = displayHours >= 12 ? "PM" : "AM";
+    displayHours = displayHours % 12 || 12; // Convert 0 to 12 for midnight/noon
+    displayHours = String(displayHours).padStart(2, "0");
 
-    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds} ${period}`;
+    return `${day}/${month}/${year} ${displayHours}:${displayMinutes}:${displaySeconds} ${displayPeriod}`;
   } catch (error) {
     console.error("IST conversion error:", error);
     return "Invalid Date";
   }
 };
-  useEffect(() => {
-  const fetchData = async () => {
-    if (!startDate || !endDate) return;
-
-    try {
-      const formattedStartDate = dayjs(startDate).format("YYYY-MM-DD");
-      const formattedEndDate = dayjs(endDate).format("YYYY-MM-DD");
-
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
-      );
-
-      console.log("Fetched Data:", response.data);
-      response.data.forEach((row, index) => {
-        console.log(`Row ${index}: date=${row.date}, time=${row.time}`);
-      });
-
-      setTableData(response.data);
-    } catch (error) {
+  error) {
       console.error("Error fetching data:", error);
     }
   };
