@@ -17,30 +17,45 @@ const ViewDataReport = () => {
 
   // Function to format date and time in IST (adapted from StudentReportDetails)
   const formatDateTimeIST = (dateString) => {
-    if (!dateString) return "Invalid Date";
-    
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        console.error("Invalid date string:", dateString);
-        return "Invalid Date";
-      }
-      return date.toLocaleString("en-GB", {
-        timeZone: "Asia/Kolkata",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      }).replace(/,/, ""); // Remove comma for consistency
-    } catch (error) {
-      console.error("IST conversion error:", error);
+  if (!dateString) return "Invalid Date";
+
+  try {
+    // Create a Date object from the input string (assumed to be in UTC+8)
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      console.error("Invalid date string:", dateString);
       return "Invalid Date";
     }
-  };
 
+    // Adjust for IST (UTC+5:30)
+    // Southeast Asia (UTC+8) to IST (UTC+5:30) = -2 hours and -30 minutes
+    const istOffset = 5.5 * 60; // IST offset in minutes (5 hours 30 minutes)
+    const southeastAsiaOffset = 8 * 60; // Southeast Asia offset in minutes (8 hours)
+    const timeDifference = southeastAsiaOffset - istOffset; // Difference in minutes (150 minutes)
+
+    // Subtract the time difference to convert to IST
+    const istDate = new Date(date.getTime() - timeDifference * 60 * 1000);
+
+    // Format the date and time manually to match your desired output
+    const day = String(istDate.getUTCDate()).padStart(2, "0");
+    const month = String(istDate.getUTCMonth() + 1).padStart(2, "0"); // Months are 0-based
+    const year = istDate.getUTCFullYear();
+    let hours = istDate.getUTCHours();
+    const minutes = String(istDate.getUTCMinutes()).padStart(2, "0");
+    const seconds = String(istDate.getUTCSeconds()).padStart(2, "0");
+    
+    // Convert to 12-hour format with AM/PM
+    const period = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12; // Convert 0 to 12 for midnight/noon
+    hours = String(hours).padStart(2, "0");
+
+    // Return formatted string in "DD/MM/YYYY HH:MM:SS AM/PM" format
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds} ${period}`;
+  } catch (error) {
+    console.error("IST conversion error:", error);
+    return "Invalid Date";
+  }
+};
   useEffect(() => {
     const fetchData = async () => {
       if (!startDate || !endDate) return;
