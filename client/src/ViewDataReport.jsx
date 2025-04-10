@@ -50,7 +50,7 @@ const ViewDataReport = () => {
       const displayMinutes = String(istDate.getUTCMinutes()).padStart(2, "0");
       const displaySeconds = String(istDate.getUTCSeconds()).padStart(2, "0");
 
-      // Convert to 12-hour format with AM/PM
+      // Convert to 12-hour format with correct AM/PM
       const displayPeriod = displayHours >= 12 ? "PM" : "AM";
       displayHours = displayHours % 12 || 12; // Convert 0 to 12 for midnight/noon
       displayHours = String(displayHours).padStart(2, "0");
@@ -136,7 +136,7 @@ const ViewDataReport = () => {
             onClick={() => navigate(-1)}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
           >
-            &lt; Back
+            < Back
           </button>
           <div className="relative">
             <button
