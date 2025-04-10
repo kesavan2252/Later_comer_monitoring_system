@@ -40,21 +40,24 @@ const ViewDataReport = () => {
 
       // Convert UTC to IST (add 5 hours and 30 minutes)
       const istOffsetMs = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
-      const istDate = new Date(date.getTime() + istOffsetMs);
+      const istTimeMs = date.getTime() + istOffsetMs;
 
-      // Format the date
-      const day = String(istDate.getUTCDate()).padStart(2, "0");
-      const month = String(istDate.getUTCMonth() + 1).padStart(2, "0"); // Months are 0-based
-      const year = istDate.getUTCFullYear();
+      // Create a new Date object for IST
+      const istDate = new Date(istTimeMs);
 
-      // Get IST hours and convert to 12-hour format
-      let istHours = istDate.getUTCHours();
-      const displayMinutes = String(istDate.getUTCMinutes()).padStart(2, "0");
-      const displaySeconds = String(istDate.getUTCSeconds()).padStart(2, "0");
+      // Format the date and time manually
+      const day = String(istDate.getDate()).padStart(2, "0");
+      const month = String(istDate.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+      const year = istDate.getFullYear();
+      let rawHours = istDate.getHours(); // Raw hours for AM/PM determination
+      const displayMinutes = String(istDate.getMinutes()).padStart(2, "0");
+      const displaySeconds = String(istDate.getSeconds()).padStart(2, "0");
 
-      // Convert to 12-hour format with correct AM/PM
-      let displayHours = istHours % 12 || 12; // Convert 0 to 12 for midnight/noon
-      const displayPeriod = istHours >= 12 ? "PM" : "AM";
+      // Determine AM/PM based on raw hours
+      const displayPeriod = rawHours >= 12 ? "PM" : "AM";
+
+      // Convert to 12-hour format
+      let displayHours = rawHours % 12 || 12; // Convert 0 to 12 for midnight/noon
       displayHours = String(displayHours).padStart(2, "0");
 
       return `${day}/${month}/${year} ${displayHours}:${displayMinutes}:${displaySeconds} ${displayPeriod}`;
