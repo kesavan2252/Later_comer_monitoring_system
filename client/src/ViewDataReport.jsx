@@ -42,17 +42,20 @@ const ViewDataReport = () => {
       const istOffsetMs = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
       const istDate = new Date(date.getTime() + istOffsetMs);
 
-      // Format the date and time manually
+      // Get the IST hours for proper AM/PM determination
+      const istHours = (istDate.getUTCHours() + 5.5) % 24; // Adjust for IST offset
+
+      // Format the date
       const day = String(istDate.getUTCDate()).padStart(2, "0");
       const month = String(istDate.getUTCMonth() + 1).padStart(2, "0"); // Months are 0-based
       const year = istDate.getUTCFullYear();
-      let displayHours = istDate.getUTCHours();
-      const displayMinutes = String(istDate.getUTCMinutes()).padStart(2, "0");
-      const displaySeconds = String(istDate.getUTCSeconds()).padStart(2, "0");
 
       // Convert to 12-hour format with correct AM/PM
-      const displayPeriod = displayHours >= 12 ? "PM" : "AM";
-      displayHours = displayHours % 12 || 12; // Convert 0 to 12 for midnight/noon
+      let displayHours = istHours % 12 || 12; // Convert 0 to 12 for midnight/noon
+      const displayMinutes = String(istDate.getUTCMinutes()).padStart(2, "0");
+      const displaySeconds = String(istDate.getUTCSeconds()).padStart(2, "0");
+      const displayPeriod = istHours >= 12 ? "PM" : "AM";
+
       displayHours = String(displayHours).padStart(2, "0");
 
       return `${day}/${month}/${year} ${displayHours}:${displayMinutes}:${displaySeconds} ${displayPeriod}`;
