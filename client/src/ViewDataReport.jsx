@@ -39,7 +39,7 @@ const ViewDataReport = () => {
       }
 
       // Convert UTC to IST (add 5 hours and 30 minutes)
-      const istOffsetMs = 6.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
+      const istOffsetMs = 6.0 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
       const istDate = new Date(date.getTime() + istOffsetMs);
 
       // Format the date and time manually
