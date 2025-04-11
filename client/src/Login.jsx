@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect for Caps Lock detection
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify"; // Import Toastify
-import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import icon from "/img/main.jpg";
 import user from "/img/user.jpg";
 import pwd from "/img/pwd.jpg";
@@ -11,6 +11,7 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false); // State to track Caps Lock
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -24,28 +25,35 @@ const Login = () => {
 
       if (response.ok) {
         const data = await response.json();
-        
-         // ✅ Store the token in localStorage
-         localStorage.setItem("token", data.token);  
- 
-         
+        localStorage.setItem("token", data.token);
+
         if (username === "admin") {
           navigate("/dashboard");
         } else {
           navigate("/scanner");
         }
       } else {
-        toast.error("Invalid credentials!", { position: "top-right" }); // Show error notification
+        toast.error("Invalid credentials!", { position: "top-right" });
       }
-    
     } catch (error) {
-      toast.error("An error occurred. Please try again later.", { position: "top-right" }); // Show error notification
+      toast.error("An error occurred. Please try again later.", { position: "top-right" });
     }
-  }; // Add missing closing brace here
+  };
+
+  // Detect Caps Lock state
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const capsLock = e.getModifierState("CapsLock");
+      setCapsLockOn(capsLock);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-cover bg-center bg-no-repeat text-white text-center"
-    style={{ backgroundImage: `url(${image})` }}>
+      style={{ backgroundImage: `url(${image})` }}>
 
       {/* Notification Container */}
       <ToastContainer />
@@ -72,7 +80,7 @@ const Login = () => {
           />
         </div>
 
-        {/* Password Input with Eye Icon */}
+        {/* Password Input with Unique Symbol and Caps Lock Warning */}
         <div className="relative w-full">
           <img src={pwd} alt="Password Icon" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" />
           <input
@@ -83,13 +91,17 @@ const Login = () => {
             required
             className="w-full pl-10 pr-10 py-2 border-b-2 border-white bg-transparent text-white text-lg outline-none placeholder-white placeholder-opacity-70"
           />
-          {/* Eye icon for toggling visibility */}
+          {/* Unique symbol for toggling visibility */}
           <span
             className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-white text-xl"
             onClick={() => setShowPassword(!showPassword)}
           >
-            {showPassword ? "👁️‍🗨️" : "👁️"}
+            {showPassword ? "🌙" : "🌟"} {/* Moon for hide, Star for show */}
           </span>
+          {/* Caps Lock Warning */}
+          {capsLockOn && (
+            <p className="text-sm text-red-300 mt-1">Warning: Caps Lock is on!</p>
+          )}
         </div>
 
         <button
