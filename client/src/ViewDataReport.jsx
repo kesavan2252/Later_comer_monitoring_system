@@ -141,7 +141,7 @@ const ViewDataReport = () => {
             onClick={() => navigate(-1)}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
           >
-            < Back
+            &lt;Back
           </button>
           <div className="relative">
             <button
