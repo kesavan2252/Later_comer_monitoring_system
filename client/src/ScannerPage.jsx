@@ -104,17 +104,14 @@ const ScannerPage = () => {
         await fetchAttendance(manualRollNo);
     };
 
-    // Handle barcode scanner input
+    // Handle barcode scanner input and Enter key
     useEffect(() => {
         const handleScan = (event) => {
             if (event.key === "Enter" && manualRollNo) {
                 fetchAttendance(manualRollNo);
-                // Reset manualRollNo after Enter to prepare for next scan
-                setManualRollNo("");
-            } else if (event.key.length === 1 || event.key === "Enter") {
-                // Accumulate keystrokes from scanner
-                setManualRollNo((prev) => prev + event.key);
+                setManualRollNo(""); // Reset after Enter
             }
+            // Do not accumulate keystrokes here; let the input handle it
         };
 
         document.addEventListener("keydown", handleScan);
@@ -184,7 +181,7 @@ const ScannerPage = () => {
                             type="text"
                             placeholder="Enter Roll Number"
                             value={manualRollNo}
-                            onChange={(e) => setManualRollNo(e.target.value)}
+                            onChange={(e) => setManualRollNo(e.target.value)} // Handle manual typing here
                             ref={inputRef}
                             className="border px-4 py-2 rounded w-full mt-2"
                         />
