@@ -96,7 +96,7 @@ const Login = () => {
             className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-white text-xl"
             onClick={() => setShowPassword(!showPassword)}
           >
-            {showPassword ? "🌙" : "🌟"} {/* Moon for hide, Star for show */}
+            {showPassword ? "🔒" : "🔓"} {/* Moon for hide, Star for show */}
           </span>
           {/* Caps Lock Warning */}
           {capsLockOn && (
