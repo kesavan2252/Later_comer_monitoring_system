@@ -96,11 +96,11 @@ const Login = () => {
             className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-white text-xl"
             onClick={() => setShowPassword(!showPassword)}
           >
-            {showPassword ? "🔒" : "🔓"} {/* Moon for hide, Star for show */}
+            {showPassword ? "🔓" : "🔒"} 
           </span>
           {/* Caps Lock Warning */}
           {capsLockOn && (
-            <p className="text-sm text-red-300 mt-1">Warning: Caps Lock is on!</p>
+            <p className="text-sm text-red-600 mt-1">Warning: Caps Lock is on!</p>
           )}
         </div>
 
