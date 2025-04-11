@@ -115,17 +115,7 @@ const ScannerPage = () => {
 
     return (
         <div className="min-h-screen bg-gray-100 relative">
-            {notification.message && (
-                <div className={`fixed top-5 right-5 px-4 py-2 rounded shadow-lg text-white 
-                    ${notification.type === "success" ? "bg-green-500" 
-                    : notification.type === "error" ? "bg-red-500" 
-                    : notification.type === "info" ? "bg-blue-500" 
-                    : "bg-yellow-500"}`}>
-                    {notification.message}
-                </div>
-            )}
-
-            <div className="bg-purple-700 text-white flex justify-between items-center px-6 py-3">
+           <div className="bg-purple-700 text-white flex justify-between items-center px-6 py-3">
                 <a href="https://solamalaice.ac.in/" target="_blank" rel="noopener noreferrer"
                     className="text-2xl font-bold flex-grow text-left">
                     Solamalai College of Engineering
