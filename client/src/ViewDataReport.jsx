@@ -14,6 +14,16 @@ const ViewDataReport = () => {
   const [tableData, setTableData] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  const formatDateWithFallback = (dateStr) => {
+    if (!dateStr || dateStr.trim() === "") return "Invalid Date";
+    const [datePart] = dateStr.split(","); // Split to handle existing format
+    if (datePart && !dateStr.includes(":")) {
+      // If no time, append a default time
+      return `${datePart}, 12:00:00 AM`;
+    }
+    return dateStr;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       if (!startDate || !endDate) return;
@@ -28,7 +38,7 @@ const ViewDataReport = () => {
 
         console.log("Fetched Data:", response.data);
         response.data.forEach((row, index) => {
-          console.log(`Row ${index}: date=${row.date}`);
+          console.log(`Row ${index}: date=${row.date}, raw_ist_date=${row.ist_date}`);
         });
 
         setTableData(response.data);
@@ -45,7 +55,7 @@ const ViewDataReport = () => {
       RollNo: row.roll_no,
       Name: row.name,
       Department: row.department,
-      "Date & Time (IST)": row.date.replace(", ", " "), // Replace comma with space for Excel
+      "Date & Time (IST)": formatDateWithFallback(row.date).replace(", ", " "), // Replace comma with space
       Batch: row.batch,
     }));
 
@@ -66,7 +76,7 @@ const ViewDataReport = () => {
       row.roll_no,
       row.name,
       row.department,
-      row.date,
+      formatDateWithFallback(row.date),
       row.batch,
     ]);
 
@@ -138,7 +148,7 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">{row.date}</td>
+                  <td className="py-3 px-6">{formatDateWithFallback(row.date)}</td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
