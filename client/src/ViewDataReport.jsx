@@ -45,7 +45,7 @@ const ViewDataReport = () => {
       RollNo: row.roll_no,
       Name: row.name,
       Department: row.department,
-      "Date & Time (IST)": row.date.replace(", ", " "), // Replace comma with space for Excel
+      "Date & Time (IST)": row.date.replace(", ", " "),
       Batch: row.batch,
     }));
 
@@ -66,7 +66,7 @@ const ViewDataReport = () => {
       row.roll_no,
       row.name,
       row.department,
-      row.date, // Use pre-formatted IST date
+      row.date,
       row.batch,
     ]);
 
@@ -138,7 +138,7 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">{row.date}</td> {/* Use pre-formatted IST date */}
+                  <td className="py-3 px-6">{row.date}</td>
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
