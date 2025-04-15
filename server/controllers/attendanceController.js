@@ -308,17 +308,17 @@ export const filterAttendance = async (req, res) => {
       return res.status(400).json({ error: "Start date and end date are required." });
     }
 
-    // Format start and end dates as full timestamps
-    const formattedStartDate = new Date(`${startDate}T00:00:00Z`).toISOString();
-    const formattedEndDate = new Date(`${endDate}T23:59:59Z`).toISOString();
+    // Use full timestamp range
+    const start = new Date(`${startDate}T00:00:00Z`).toISOString();
+    const end = new Date(`${endDate}T23:59:59Z`).toISOString();
 
-    console.log("Executing Query with timestamps:", formattedStartDate, formattedEndDate);
+    console.log("Executing Query with timestamps:", start, end);
     const result = await pool.query(
-      "SELECT roll_no, name, department, date, status, batch FROM attendance WHERE date BETWEEN $1 AND $2",
-      [formattedStartDate, formattedEndDate]
+      "SELECT roll_no, name, department, date, status, batch FROM attendance WHERE date >= $1 AND date <= $2",
+      [start, end]
     );
 
-    console.log("Query Result (raw):", result.rows); // Debug raw data
+    console.log("Raw Query Result:", result.rows); // Debug raw data
 
     // Format the date column to IST with time
     const formattedRows = result.rows.map(row => ({
@@ -335,13 +335,15 @@ export const filterAttendance = async (req, res) => {
       }),
     }));
 
-    console.log("Query Result (formatted):", formattedRows); // Debug formatted data
+    console.log("Formatted Query Result:", formattedRows); // Debug formatted data
     res.json(formattedRows);
   } catch (error) {
     console.error("Error fetching attendance:", error);
     res.status(500).json({ error: error.message });
   }
 };
+
+
 // Add Attendance Record
 export const addAttendance = async (req, res) => {
   const { roll_no, name, department, batch } = req.body;
