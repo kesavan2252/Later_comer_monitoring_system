@@ -305,23 +305,43 @@ export const filterAttendance = async (req, res) => {
 
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
-        return res.status(400).json({ error: "Start date and end date are required." });
+      return res.status(400).json({ error: "Start date and end date are required." });
     }
 
-    console.log("Executing Query...");
+    // Format start and end dates to match PostgreSQL date format
+    const formattedStartDate = new Date(startDate).toISOString().split("T")[0];
+    const formattedEndDate = new Date(endDate).toISOString().split("T")[0];
+
+    console.log("Executing Query with dates:", formattedStartDate, formattedEndDate);
     const result = await pool.query(
-        "SELECT * FROM attendance WHERE date::DATE BETWEEN $1 AND $2",
-        [startDate, endDate]
+      "SELECT roll_no, name, department, date, status, batch FROM attendance WHERE date::DATE BETWEEN $1 AND $2",
+      [formattedStartDate, formattedEndDate]
     );
 
-    console.log("Query Result:", result.rows);  // Check if data is returned
-    res.json(result.rows);
+    console.log("Query Result:", result.rows); // Check if data is returned
+
+    // Format the date column to IST before sending
+    const formattedRows = result.rows.map(row => ({
+      ...row,
+      date: new Date(row.date).toLocaleString("en-GB", {
+        timeZone: "Asia/Kolkata",
+        hour12: true,
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hours12:true,
+      }),
+    }));
+
+    res.json(formattedRows);
   } catch (error) {
-    console.error("Error fetching attendance:", error);  // See the exact error in terminal
+    console.error("Error fetching attendance:", error);
     res.status(500).json({ error: error.message });
   }
 };
-
 
 
 // Add Attendance Record
