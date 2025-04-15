@@ -308,19 +308,19 @@ export const filterAttendance = async (req, res) => {
       return res.status(400).json({ error: "Start date and end date are required." });
     }
 
-    // Format start and end dates to match PostgreSQL date format
-    const formattedStartDate = new Date(startDate).toISOString().split("T")[0];
-    const formattedEndDate = new Date(endDate).toISOString().split("T")[0];
+    // Format start and end dates as full timestamps
+    const formattedStartDate = new Date(`${startDate}T00:00:00Z`).toISOString();
+    const formattedEndDate = new Date(`${endDate}T23:59:59Z`).toISOString();
 
-    console.log("Executing Query with dates:", formattedStartDate, formattedEndDate);
+    console.log("Executing Query with timestamps:", formattedStartDate, formattedEndDate);
     const result = await pool.query(
-      "SELECT roll_no, name, department, date, status, batch FROM attendance WHERE date::DATE BETWEEN $1 AND $2",
+      "SELECT roll_no, name, department, date, status, batch FROM attendance WHERE date BETWEEN $1 AND $2",
       [formattedStartDate, formattedEndDate]
     );
 
-    console.log("Query Result:", result.rows); // Check if data is returned
+    console.log("Query Result (raw):", result.rows); // Debug raw data
 
-    // Format the date column to IST before sending
+    // Format the date column to IST with time
     const formattedRows = result.rows.map(row => ({
       ...row,
       date: new Date(row.date).toLocaleString("en-GB", {
@@ -335,14 +335,13 @@ export const filterAttendance = async (req, res) => {
       }),
     }));
 
+    console.log("Query Result (formatted):", formattedRows); // Debug formatted data
     res.json(formattedRows);
   } catch (error) {
     console.error("Error fetching attendance:", error);
     res.status(500).json({ error: error.message });
   }
 };
-
-
 // Add Attendance Record
 export const addAttendance = async (req, res) => {
   const { roll_no, name, department, batch } = req.body;
