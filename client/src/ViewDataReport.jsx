@@ -45,7 +45,7 @@ const ViewDataReport = () => {
       RollNo: row.roll_no,
       Name: row.name,
       Department: row.department,
-      "Date & Time (IST)": row.date, // Use pre-formatted IST date
+      "Date & Time (IST)": row.date.replace(", ", " "), // Replace comma with space for Excel
       Batch: row.batch,
     }));
 
