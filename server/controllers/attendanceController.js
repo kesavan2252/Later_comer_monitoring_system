@@ -308,7 +308,7 @@ export const filterAttendance = async (req, res) => {
       return res.status(400).json({ error: "Start date and end date are required." });
     }
 
-    // Convert to PostgreSQL-compatible timestamps with timezone
+    // Convert to PostgreSQL-compatible timestamps
     const start = new Date(`${startDate}T00:00:00Z`);
     const end = new Date(`${endDate}T23:59:59Z`);
     const formattedStartDate = start.toISOString();
@@ -316,18 +316,18 @@ export const filterAttendance = async (req, res) => {
 
     console.log("Executing Query with timestamps:", formattedStartDate, formattedEndDate);
 
-    // Use explicit timestamp comparison
+    // Retrieve raw timestamp and convert to IST
     const result = await pool.query(
-      "SELECT roll_no, name, department, date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS ist_date, status, batch FROM attendance WHERE date >= $1 AND date <= $2",
+      "SELECT roll_no, name, department, date, EXTRACT(EPOCH FROM date) AS epoch, date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS ist_date, status, batch FROM attendance WHERE date >= $1 AND date <= $2",
       [formattedStartDate, formattedEndDate]
     );
 
-    console.log("Query Result (raw):", result.rows); // Debug raw data
+    console.log("Query Result (raw):", result.rows); // Debug raw data with epoch and ist_date
 
     // Format the ist_date column to IST with time
     const formattedRows = result.rows.map(row => ({
       ...row,
-      date: new Date(row.ist_date).toLocaleString("en-GB", {
+      date: row.ist_date ? new Date(row.ist_date).toLocaleString("en-GB", {
         timeZone: "Asia/Kolkata",
         hour12: true,
         day: "2-digit",
@@ -336,7 +336,7 @@ export const filterAttendance = async (req, res) => {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-      }),
+      }) : "Invalid Date",
     }));
 
     console.log("Query Result (formatted):", formattedRows); // Debug formatted data
@@ -346,7 +346,6 @@ export const filterAttendance = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 // Add Attendance Record
 export const addAttendance = async (req, res) => {
   const { roll_no, name, department, batch } = req.body;
