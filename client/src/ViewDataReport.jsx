@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "./components/Sidebar";
-import dayjs from "dayjs";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -15,65 +14,13 @@ const ViewDataReport = () => {
   const [tableData, setTableData] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Function to format date and time in IST
-  const formatDateTimeIST = (dateString, timeString) => {
-    if (!dateString || !timeString) return "Invalid Date";
-
-    try {
-      // Split time into components
-      const [time, period] = timeString.trim().split(/(\s+)/).filter(Boolean);
-      const [hours, minutes, seconds] = time.split(":");
-      let hour = parseInt(hours, 10);
-
-      // Convert 12-hour to 24-hour format
-      if (period.trim().toUpperCase() === "PM" && hour !== 12) hour += 12;
-      if (period.trim().toUpperCase() === "AM" && hour === 12) hour = 0;
-
-      // Create a Date object from the UTC date and time
-      const date = new Date(dateString);
-      date.setUTCHours(hour, parseInt(minutes, 10), parseInt(seconds, 10), 0);
-
-      if (isNaN(date.getTime())) {
-        console.error("Invalid date or time string:", `${dateString} ${timeString}`);
-        return "Invalid Date";
-      }
-
-      // Convert UTC to IST (add 5 hours and 30 minutes)
-      const istOffsetMs = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
-      const istTimeMs = date.getTime() + istOffsetMs;
-
-      // Create a new Date object for IST
-      const istDate = new Date(istTimeMs);
-
-      // Format the date and time manually
-      const day = String(istDate.getDate()).padStart(2, "0");
-      const month = String(istDate.getMonth() + 1).padStart(2, "0"); // Months are 0-based
-      const year = istDate.getFullYear();
-      let rawHours = istDate.getHours(); // Raw hours for AM/PM determination
-      const displayMinutes = String(istDate.getMinutes()).padStart(2, "0");
-      const displaySeconds = String(istDate.getSeconds()).padStart(2, "0");
-
-      // Determine AM/PM based on raw hours
-      const displayPeriod = rawHours >= 12 ? "PM" : "AM";
-
-      // Convert to 12-hour format
-      let displayHours = rawHours % 12 || 12; // Convert 0 to 12 for midnight/noon
-      displayHours = String(displayHours).padStart(2, "0");
-
-      return `${day}/${month}/${year} ${displayHours}:${displayMinutes}:${displaySeconds} ${displayPeriod}`;
-    } catch (error) {
-      console.error("IST conversion error:", error);
-      return "Invalid Date";
-    }
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       if (!startDate || !endDate) return;
 
       try {
-        const formattedStartDate = dayjs(startDate).format("YYYY-MM-DD");
-        const formattedEndDate = dayjs(endDate).format("YYYY-MM-DD");
+        const formattedStartDate = new Date(startDate).toISOString().split("T")[0];
+        const formattedEndDate = new Date(endDate).toISOString().split("T")[0];
 
         const response = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/api/attendance/filter?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
@@ -81,7 +28,7 @@ const ViewDataReport = () => {
 
         console.log("Fetched Data:", response.data);
         response.data.forEach((row, index) => {
-          console.log(`Row ${index}: date=${row.date}, time=${row.time}, Converted=${formatDateTimeIST(row.date, row.time)}`);
+          console.log(`Row ${index}: date=${row.date}`);
         });
 
         setTableData(response.data);
@@ -98,7 +45,7 @@ const ViewDataReport = () => {
       RollNo: row.roll_no,
       Name: row.name,
       Department: row.department,
-      "Date & Time (IST)": formatDateTimeIST(row.date, row.time), // Use both date and time
+      "Date & Time (IST)": row.date, // Use pre-formatted IST date
       Batch: row.batch,
     }));
 
@@ -119,7 +66,7 @@ const ViewDataReport = () => {
       row.roll_no,
       row.name,
       row.department,
-      formatDateTimeIST(row.date, row.time), // Use both date and time
+      row.date, // Use pre-formatted IST date
       row.batch,
     ]);
 
@@ -141,7 +88,7 @@ const ViewDataReport = () => {
             onClick={() => navigate(-1)}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
           >
-            &lt;Back
+            Back
           </button>
           <div className="relative">
             <button
@@ -191,7 +138,7 @@ const ViewDataReport = () => {
                   <td className="py-3 px-6">{row.roll_no}</td>
                   <td className="py-3 px-6">{row.name}</td>
                   <td className="py-3 px-6">{row.department}</td>
-                  <td className="py-3 px-6">{formatDateTimeIST(row.date, row.time)}</td>
+                  <td className="py-3 px-6">{row.date}</td> {/* Use pre-formatted IST date */}
                   <td className="py-3 px-6">{row.batch}</td>
                 </tr>
               ))}
