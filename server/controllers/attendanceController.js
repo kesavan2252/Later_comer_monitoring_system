@@ -301,45 +301,46 @@ export const getFilteredAttendance = async (req, res) => {
 
 export const filterAttendance = async (req, res) => {
   try {
-    console.log("Request received with query:", req.query);
-
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
       return res.status(400).json({ error: "Start date and end date are required." });
     }
 
-    // Convert to PostgreSQL-compatible timestamps
+    // Convert to PostgreSQL-compatible timestamps in UTC
     const start = new Date(`${startDate}T00:00:00Z`);
     const end = new Date(`${endDate}T23:59:59Z`);
-    const formattedStartDate = start.toISOString();
-    const formattedEndDate = end.toISOString();
 
-    console.log("Executing Query with timestamps:", formattedStartDate, formattedEndDate);
-
-    // Retrieve raw timestamp and convert to IST
+    // Query with proper timezone conversion
     const result = await pool.query(
-      "SELECT roll_no, name, department, date, EXTRACT(EPOCH FROM date) AS epoch, date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS ist_date, status, batch FROM attendance WHERE date >= $1 AND date <= $2",
-      [formattedStartDate, formattedEndDate]
+      `SELECT 
+        a.roll_no, 
+        s.name, 
+        a.department, 
+        a.date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS ist_date,
+        a.status,
+        s.batch
+       FROM attendance a
+       JOIN students s ON a.student_id = s.id
+       WHERE a.date >= $1 AND a.date <= $2
+       ORDER BY a.date DESC`,
+      [start.toISOString(), end.toISOString()]
     );
 
-    console.log("Query Result (raw):", result.rows); // Debug raw data with epoch and ist_date
-
-    // Format the ist_date column to IST with time
+    // Format dates consistently for frontend
     const formattedRows = result.rows.map(row => ({
       ...row,
-      date: row.ist_date ? new Date(row.ist_date).toLocaleString("en-GB", {
-        timeZone: "Asia/Kolkata",
-        hour12: true,
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      }) : "Invalid Date",
+      date: new Date(row.ist_date).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      })
     }));
 
-    console.log("Query Result (formatted):", formattedRows); // Debug formatted data
     res.json(formattedRows);
   } catch (error) {
     console.error("Error fetching attendance:", error);
